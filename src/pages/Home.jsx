@@ -37,12 +37,12 @@ const Home = () => {
     },
     {
       names: "Arjun & Sneha",
-      image: "https://images.unsplash.com/photo-1595959183082-7bce70848dd2?w=500&auto=format&fit=crop&q=60",
+      image: "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=500&auto=format&fit=crop&q=60",
       story: "Thanks to the detailed preferences, I found someone who shares my values and dreams."
     },
     {
       names: "Vikram & Priya",
-      image: "https://images.unsplash.com/photo-1623366302587-b38b1ddaefd9?w=500&auto=format&fit=crop&q=60",
+      image: "https://images.unsplash.com/photo-1606216794074-735e91aa2c92?w=500&auto=format&fit=crop&q=60",
       story: "The best platform for serious relationships. Highly recommended for finding your soulmate."
     }
   ];

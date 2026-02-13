@@ -13,6 +13,8 @@ const StepIndicator = ({ step, title, currentStep }) => (
 const Register = () => {
     const [currentStep, setCurrentStep] = useState(1);
     const [formData, setFormData] = useState({
+        fullName: '',
+        gender: '',
         dob: '',
         motherTongue: '',
         email: '',
@@ -131,6 +133,8 @@ const Register = () => {
 
     const validateStep1 = () => {
         const newErrors = {};
+        if (!formData.fullName) newErrors.fullName = "Full Name is required";
+        if (!formData.gender) newErrors.gender = "Gender is required";
         if (!formData.dob) {
             newErrors.dob = "Date of Birth is required";
         } else {
@@ -346,6 +350,44 @@ const Register = () => {
                             <div className="form-step animate-fade-in-up">
                                 <h3 className="section-title">Basic Details</h3>
                                 <div className="form-grid">
+                                    <div className="form-group">
+                                        <label className="input-label">Full Name</label>
+                                        <input
+                                            type="text"
+                                            name="fullName"
+                                            placeholder="Enter your full name"
+                                            className="register-input"
+                                            value={formData.fullName}
+                                            onChange={handleInputChange}
+                                        />
+                                        {errors.fullName && <span className="validation-error">{errors.fullName}</span>}
+                                    </div>
+
+                                    <div className="form-group">
+                                        <label className="input-label">Gender</label>
+                                        <div className="radio-group">
+                                            <label className="radio-label">
+                                                <input
+                                                    type="radio"
+                                                    name="gender"
+                                                    value="Male"
+                                                    checked={formData.gender === 'Male'}
+                                                    onChange={handleInputChange}
+                                                /> Male
+                                            </label>
+                                            <label className="radio-label">
+                                                <input
+                                                    type="radio"
+                                                    name="gender"
+                                                    value="Female"
+                                                    checked={formData.gender === 'Female'}
+                                                    onChange={handleInputChange}
+                                                /> Female
+                                            </label>
+                                        </div>
+                                        {errors.gender && <span className="validation-error">{errors.gender}</span>}
+                                    </div>
+
                                     <div className="form-group">
                                         <label className="input-label">Date of Birth</label>
                                         <input
