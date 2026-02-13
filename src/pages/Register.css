@@ -23,14 +23,12 @@
     width: 100%;
     height: 100%;
     background: rgba(0, 0, 0, 0.5);
-    /* Slightly darker for better contrast */
     z-index: 1;
 }
 
 .register-card {
     width: 100%;
     max-width: 600px;
-    /* Wider for registration form */
     padding: 3rem;
     position: relative;
     z-index: 2;
@@ -131,6 +129,7 @@
     display: flex;
     gap: 1.5rem;
     margin-top: 0.5rem;
+    flex-wrap: wrap;
 }
 
 .radio-label {
@@ -177,12 +176,6 @@
     margin-top: 0.25rem;
 }
 
-@media (min-width: 640px) {
-    .form-grid.two-col {
-        grid-template-columns: 1fr 1fr;
-    }
-}
-
 /* Image Upload Styles */
 .photo-upload-container {
     display: flex;
@@ -220,7 +213,6 @@
 .upload-option:hover {
     border-color: var(--primary);
     background-color: #fffbeb;
-    /* Light yellow tint */
     transform: translateY(-2px);
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
 }
@@ -304,9 +296,33 @@
 }
 
 @media (min-width: 640px) {
+    .form-grid.two-col {
+        grid-template-columns: 1fr 1fr;
+    }
+
     .upload-options {
         flex-direction: row;
         justify-content: center;
         align-items: stretch;
+    }
+}
+
+@media (max-width: 768px) {
+    .register-container {
+        padding: 6rem 1rem 2rem;
+    }
+
+    .register-card {
+        padding: 2rem 1.5rem;
+    }
+
+    .register-header h2 {
+        font-size: 1.5rem;
+    }
+
+    .step-indicator {
+        width: 32px;
+        height: 32px;
+        font-size: 0.8rem;
     }
 }

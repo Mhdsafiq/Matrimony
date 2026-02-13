@@ -160,4 +160,38 @@
 .cta-btn {
     font-size: 1.2rem;
     padding: 1rem 3rem;
+    margin-top: 1rem;
+    display: inline-block;
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+    .section {
+        padding: 3rem 0;
+    }
+
+    .section-header h2 {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .section-header p {
+        font-size: 1rem;
+    }
+
+    .cta-section {
+        padding: 4rem 1rem;
+    }
+
+    .cta-content h2 {
+        font-size: 2.2rem;
+    }
+
+    .cta-content p {
+        font-size: 1rem;
+    }
+
+    .stories-grid {
+        grid-template-columns: 1fr;
+    }
 }

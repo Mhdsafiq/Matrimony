@@ -163,3 +163,13 @@
         border-bottom: 1px solid #e5e7eb;
     }
 }
+
+@media (max-width: 768px) {
+    .matches-container {
+        padding: 6rem 1rem 2rem;
+    }
+
+    .matches-content {
+        padding: 2rem 1.5rem;
+    }
+}

@@ -99,6 +99,10 @@
 }
 
 @media (max-width: 768px) {
+    .hero-section {
+        padding-top: calc(var(--header-height) + 20px);
+    }
+
     .hero-title {
         font-size: 2.5rem;
     }
@@ -109,13 +113,11 @@
 
     .hero-subtitle {
         font-size: 1.1rem;
+        margin-bottom: 1.5rem;
     }
 
-    .search-form {
-        grid-template-columns: 1fr;
-    }
-
-    .age-range input {
+    .cta-container {
         width: 100%;
+        padding: 0 1rem;
     }
 }

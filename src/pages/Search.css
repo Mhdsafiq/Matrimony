@@ -331,6 +331,37 @@
 }
 
 @media (max-width: 768px) {
+    .search-container {
+        padding: 6rem 1rem 2rem;
+    }
+
+    .tab-btn {
+        padding: 1rem;
+        font-size: 0.95rem;
+    }
+
+    .search-content {
+        padding: 1.5rem;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .range-inputs {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .range-separator {
+        display: none;
+    }
+
+    .search-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
     .id-input-group {
         flex-direction: column;
     }
@@ -339,5 +370,13 @@
         width: 100%;
         justify-content: center;
         padding: 1rem;
+    }
+
+    .profile-card {
+        max-width: 100%;
+    }
+
+    .divider-text {
+        font-size: 1.2rem;
     }
 }
