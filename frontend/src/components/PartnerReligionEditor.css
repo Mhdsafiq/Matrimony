@@ -1,0 +1,327 @@
+/* Partner Religion Editor Styles */
+.proe-fullscreen-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(249, 250, 251, 0.95);
+    z-index: 2000;
+    overflow-y: auto;
+    animation: proeFadeIn 0.2s ease-out;
+}
+
+.proe-container {
+    max-width: 500px;
+    margin: 0 auto;
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 100vh;
+    background: #fff;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+@keyframes proeFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.proe-header {
+    display: flex;
+    align-items: center;
+    padding: 16px 20px;
+    background: #fff;
+}
+
+.proe-back-btn {
+    background: none;
+    border: none;
+    color: #1a2a3a;
+    padding: 8px;
+    cursor: pointer;
+    margin-right: 12px;
+}
+
+.proe-title {
+    font-size: 1.3rem;
+    color: #374151;
+    margin: 0 0 4px 0;
+    font-weight: 700;
+}
+
+.proe-subtitle {
+    font-size: 0.85rem;
+    color: #6b7c93;
+    margin: 0;
+}
+
+.proe-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 24px;
+}
+
+.proe-field-group {
+    margin-bottom: 24px;
+}
+
+.proe-label {
+    display: block;
+    font-size: 0.95rem;
+    color: #6b7c93;
+    margin-bottom: 12px;
+    font-weight: 600;
+}
+
+.proe-value-display {
+    font-size: 1.05rem;
+    color: #1a2a3a;
+    padding: 8px 0;
+    border-bottom: 1px solid #e5e7eb;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.proe-value-display:hover {
+    background: #fdfbfb;
+}
+
+/* Save button */
+.proe-footer {
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #fff;
+    padding: 16px 20px;
+    border-top: 1px solid #f0f0f0;
+    z-index: 10;
+}
+
+.proe-save-btn {
+    width: 100%;
+    background: #db4b55;
+    color: #fff;
+    border: none;
+    padding: 14px;
+    border-radius: 8px;
+    font-size: 1.05rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.proe-save-btn:hover {
+    background: #c93b45;
+}
+
+/* ============ Modal Overlay ============ */
+.proe-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 3000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.proe-modal-content {
+    background: #fff;
+    width: 90%;
+    max-width: 460px;
+    max-height: 80vh;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    animation: proeModalIn 0.2s ease-out;
+    overflow: hidden;
+}
+
+@keyframes proeModalIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.proe-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 20px 12px;
+    flex-shrink: 0;
+}
+
+.proe-close {
+    background: none;
+    border: none;
+    color: #6b7c93;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+}
+
+/* Search bar inside modal */
+.proe-search-bar {
+    display: flex;
+    align-items: center;
+    background: #f3f4f6;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 10px 14px;
+    flex-shrink: 0;
+}
+
+.proe-search-bar input {
+    border: none;
+    background: transparent;
+    outline: none;
+    width: 100%;
+    font-size: 0.95rem;
+}
+
+/* Selected chips in modal header */
+.proe-selected-chip {
+    display: inline-flex;
+    align-items: center;
+    background: #fdf2f2;
+    color: #1a2a3a;
+    padding: 4px 10px;
+    border-radius: 16px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    border: 1px solid #fecaca;
+}
+
+.proe-selected-chip button {
+    background: none;
+    border: none;
+    color: #db4b55;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    padding: 0;
+    margin-left: 6px;
+}
+
+/* Scrollable body */
+.proe-modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 16px 8px;
+}
+
+.proe-modal-body::-webkit-scrollbar {
+    width: 4px;
+}
+
+.proe-modal-body::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.proe-modal-body::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 4px;
+}
+
+/* Group header */
+.proe-group-header {
+    padding: 12px 0 6px;
+    font-weight: 600;
+    color: #6b7c93;
+    font-size: 0.9rem;
+    margin-top: 4px;
+}
+
+/* Option item row */
+.proe-option-item {
+    display: flex;
+    align-items: center;
+    padding: 13px 0;
+    border-bottom: 1px solid #f3f4f6;
+    cursor: pointer;
+    gap: 12px;
+}
+
+.proe-option-item:last-child {
+    border-bottom: none;
+}
+
+.proe-option-item span {
+    color: #374151;
+    font-size: 1rem;
+}
+
+/* Checkbox (square with rounded corners) */
+.proe-checkbox {
+    width: 22px;
+    height: 22px;
+    border: 2px solid #d1d5db;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.15s;
+}
+
+.proe-checkbox.checked {
+    background: #db4b55;
+    border-color: #db4b55;
+}
+
+.proe-check-mark {
+    width: 12px;
+    height: 7px;
+    border-left: 2.5px solid #fff;
+    border-bottom: 2.5px solid #fff;
+    transform: rotate(-45deg);
+    margin-top: -2px;
+}
+
+/* Done button footer */
+.proe-modal-footer {
+    padding: 12px 16px;
+    border-top: 1px solid #f0f0f0;
+    display: flex;
+    justify-content: flex-end;
+    flex-shrink: 0;
+    background: #fff;
+}
+
+.proe-done-btn {
+    background: #db4b55;
+    color: #fff;
+    border: none;
+    padding: 10px 32px;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.proe-done-btn:hover {
+    background: #c93b45;
+}

@@ -1,0 +1,239 @@
+.matches-page {
+    background: var(--bg-gradient);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.matches-container {
+    padding: 6rem 2rem 4rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.matches-layout {
+    display: flex;
+    background: white;
+    border-radius: var(--radius);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    min-height: 600px;
+    overflow: hidden;
+}
+
+/* Sidebar Styles */
+.matches-sidebar {
+    width: 320px;
+    background: #fdf2d0;
+    padding: 2rem;
+    border-right: 1px solid #e5e7eb;
+}
+
+.match-group {
+    margin-bottom: 2rem;
+}
+
+.group-title {
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+    color: var(--secondary);
+}
+
+.group-list {
+    list-style: none;
+    padding-left: 0;
+}
+
+.match-link {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    padding: 0.75rem 0.5rem;
+    color: var(--text-main);
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background 0.2s, color 0.2s;
+}
+
+.match-link:hover,
+.match-link.active {
+    background: rgba(212, 175, 55, 0.1);
+    color: var(--primary);
+}
+
+.link-icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: var(--primary);
+}
+
+.link-content {
+    flex: 1;
+}
+
+.link-label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.link-desc {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-light);
+}
+
+.chevron {
+    color: var(--text-light);
+    opacity: 0.6;
+}
+
+.group-divider {
+    height: 1px;
+    background: #e5e7eb;
+    margin: 1.5rem 0;
+}
+
+/* Main Content Styles */
+.matches-content {
+    flex: 1;
+    padding: 3rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.content-header {
+    margin-bottom: 2rem;
+}
+
+.content-header h2 {
+    font-size: 1.8rem;
+    color: var(--secondary);
+    margin-bottom: 0.5rem;
+}
+
+.content-header p {
+    color: var(--text-light);
+}
+
+.matches-body.empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.illustration-container {
+    margin-bottom: 1rem;
+    position: relative;
+    width: 120px;
+    height: 120px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #f3f4f6;
+    border-radius: 50%;
+}
+
+.empty-icon {
+    color: var(--text-light);
+}
+
+.change-pref-btn {
+    margin-top: 1.5rem;
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.viewed-list {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.viewed-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    background: #fff;
+}
+
+.viewed-avatar {
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    background: #f3f4f6;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.viewed-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.viewed-content {
+    min-width: 0;
+}
+
+.viewed-content h4 {
+    margin: 0 0 2px;
+    font-size: 1rem;
+    color: var(--secondary);
+}
+
+.viewed-meta {
+    margin: 0;
+    color: var(--text-light);
+    font-size: 0.88rem;
+}
+
+.viewed-time {
+    margin: 6px 0 0;
+    color: #64748b;
+    font-size: 0.82rem;
+}
+
+.viewed-empty-note {
+    margin-top: 10px;
+    color: #64748b;
+    font-size: 0.9rem;
+}
+
+@media (max-width: 900px) {
+    .matches-layout {
+        flex-direction: column;
+    }
+
+    .matches-sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid #e5e7eb;
+    }
+}
+
+@media (max-width: 768px) {
+    .matches-container {
+        padding: 6rem 1rem 2rem;
+    }
+
+    .matches-content {
+        padding: 2rem 1.5rem;
+    }
+}

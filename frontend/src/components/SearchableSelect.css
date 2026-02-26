@@ -1,0 +1,179 @@
+.ss-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.ss-wrapper.ss-disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.ss-control {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 42px;
+    padding: 0 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background: #fff;
+    cursor: pointer;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    font-size: 0.95rem;
+    gap: 8px;
+}
+
+.ss-control:hover {
+    border-color: #bbb;
+}
+
+.ss-control.ss-open {
+    border-color: #c9a84c;
+    box-shadow: 0 0 0 2px rgba(201, 168, 76, 0.15);
+    border-radius: 6px 6px 0 0;
+}
+
+.ss-value {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #333;
+    font-size: 0.95rem;
+    line-height: 1.4;
+}
+
+.ss-value.ss-placeholder {
+    color: #999;
+}
+
+.ss-search-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 0.95rem;
+    color: #333;
+    padding: 0;
+    min-width: 0;
+    font-family: inherit;
+}
+
+.ss-search-input::placeholder {
+    color: #bbb;
+    font-style: italic;
+}
+
+.ss-chevron {
+    color: #999;
+    flex-shrink: 0;
+    transition: transform 0.25s ease;
+}
+
+.ss-chevron.ss-chevron-up {
+    transform: rotate(180deg);
+}
+
+.ss-dropdown {
+    position: absolute;
+    top: calc(100% + 2px);
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    max-height: 250px;
+    overflow-y: auto;
+    margin: 0;
+    padding: 10px;
+    list-style: none;
+    background: #fdfdfd;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    animation: ss-slide-down 0.18s ease;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 2px 8px;
+}
+
+@keyframes ss-slide-down {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.ss-option {
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: #444;
+    transition: all 0.1s ease;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border-radius: 3px;
+}
+
+.ss-option:hover,
+.ss-option.ss-highlighted {
+    background: #d1304f;
+    color: #fff;
+}
+
+.ss-option.ss-selected {
+    background: #d1304f;
+    color: #fff;
+    font-weight: 500;
+}
+
+.ss-option.ss-selected.ss-highlighted {
+    background: #bd2745;
+}
+
+.ss-header {
+    grid-column: 1 / -1;
+    font-size: 0.85rem;
+    font-weight: bold;
+    color: #333;
+    padding: 10px 12px 4px;
+    border-bottom: 1px solid #ddd;
+    margin-bottom: 4px;
+    margin-top: 6px;
+    pointer-events: none;
+}
+
+.ss-header:first-child {
+    margin-top: 0;
+}
+
+.ss-no-results {
+    padding: 12px 14px;
+    color: #aaa;
+    font-size: 0.9rem;
+    font-style: italic;
+    text-align: center;
+    grid-column: 1 / -1;
+}
+
+/* Custom scrollbar for the dropdown */
+.ss-dropdown::-webkit-scrollbar {
+    width: 6px;
+}
+
+.ss-dropdown::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.ss-dropdown::-webkit-scrollbar-thumb {
+    background: #ddd;
+    border-radius: 3px;
+}
+
+.ss-dropdown::-webkit-scrollbar-thumb:hover {
+    background: #ccc;
+}
