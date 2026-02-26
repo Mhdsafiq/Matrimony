@@ -2,7 +2,14 @@ import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { User, LogOut, Edit2, X, Save, Camera, Eye, MapPin, Briefcase, GraduationCap, Heart, Calendar, Ruler, Globe2, BadgeCheck, Users, Cigarette, Wine, ChevronRight, MoreVertical, ArrowLeft, Plus, Maximize2, Trash2, Image, Search, Settings, Utensils, Puzzle, Zap, Languages, Music, MessagesSquare, ChefHat, Shirt } from 'lucide-react';
+import FavouritesModal from '../components/FavouritesModal';
+import PartnerBasicDetailsEditor from '../components/PartnerBasicDetailsEditor';
+import PartnerEducationEditor from '../components/PartnerEducationEditor';
+import PartnerReligionEditor from '../components/PartnerReligionEditor';
+import PartnerFamilyEditor from '../components/PartnerFamilyEditor';
+import PartnerLifestyleEditor from '../components/PartnerLifestyleEditor';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { createPortal } from 'react-dom';
 import './Profile.css';
 import { getCountries, getStates, getCities, getCastes, getSects } from '../data/locationData';
 
@@ -27,9 +34,104 @@ const Profile = () => {
     const [dropdownSearchTerm, setDropdownSearchTerm] = useState('');
     const [emailError, setEmailError] = useState('');
     const [mobileError, setMobileError] = useState('');
+    const [ageError, setAgeError] = useState('');
     const [showPrivacyModal, setShowPrivacyModal] = useState(false);
     const [showIncomeModal, setShowIncomeModal] = useState(false);
+    const [activeFavModal, setActiveFavModal] = useState(null);
+    const [showProfilePreview, setShowProfilePreview] = useState(false);
+    const [previewTab, setPreviewTab] = useState('about');
+
+    // Favourites data (multi-select categories)
+    const [favouritesData, setFavouritesData] = useState({
+        hobbies: [],
+        sports: [],
+        movies: [],
+        read: [],
+        tvShows: [],
+        destinations: [],
+    });
+
+    // Favourites options for each category
+    const favouritesOptions = {
+        hobbies: [
+            'Collecting Stamps', 'Collecting Coins', 'Collecting antiques', 'Art / Handicraft',
+            'Painting', 'Cooking', 'Photography', 'Film-making', 'Reading', 'Writing',
+            'Gardening', 'Bird Watching', 'Travelling', 'Cycling', 'Fishing', 'Swimming',
+            'Dancing', 'Singing', 'Playing Musical Instruments', 'Yoga', 'Meditation',
+            'Blogging', 'DIY Crafts', 'Origami', 'Pottery', 'Knitting', 'Embroidery',
+            'Astrology', 'Astronomy', 'Volunteering', 'Social Service'
+        ],
+        sports: [
+            'Cricket', 'Football', 'Badminton', 'Tennis', 'Table Tennis', 'Hockey',
+            'Volleyball', 'Basketball', 'Swimming', 'Running', 'Cycling', 'Kabaddi',
+            'Wrestling', 'Boxing', 'Chess', 'Carrom', 'Gym / Fitness', 'Martial Arts',
+            'Golf', 'Skating', 'Archery', 'Horse Riding', 'Snooker / Billiards',
+            'Athletics', 'Yoga', 'Handball', 'Rugby'
+        ],
+        movies: [
+            'Action', 'Comedy', 'Drama', 'Romance', 'Thriller', 'Horror', 'Sci-Fi',
+            'Fantasy', 'Documentary', 'Animation', 'Musical', 'Mystery', 'Historical',
+            'Biographical', 'Adventure', 'Family', 'Crime', 'War', 'Western',
+            'Superhero', 'Suspense', 'Psychological'
+        ],
+        read: [
+            'Fiction', 'Non-Fiction', 'Mystery / Thriller', 'Romance', 'Science Fiction',
+            'Fantasy', 'Biography', 'Self-Help', 'History', 'Poetry', 'Comics',
+            'Religious / Spiritual', 'Business', 'Technology', 'Health & Wellness',
+            'Travel', 'Cookbooks', 'Philosophy', 'Psychology', 'Political',
+            'Classic Literature', 'Young Adult', 'Children\'s Books'
+        ],
+        tvShows: [
+            'Drama', 'Comedy', 'Reality TV', 'News', 'Sports', 'Documentaries',
+            'Crime / Thriller', 'Sci-Fi / Fantasy', 'Talk Shows', 'Cooking Shows',
+            'Travel Shows', 'Animated', 'Game Shows', 'Soap Opera', 'Mini Series',
+            'Stand-up Comedy', 'Music Shows', 'Religious / Spiritual', 'Horror',
+            'Historical', 'Medical Drama', 'Legal Drama'
+        ],
+        destinations: [
+            'Beach', 'Mountains', 'Historical Places', 'Pilgrimage', 'Adventure',
+            'Wildlife', 'Islands', 'Countryside', 'City Tours', 'Cruise', 'Desert',
+            'Forest', 'Backpacking', 'Luxury Resorts', 'Hill Stations', 'Lake / River',
+            'Cultural Heritage', 'Waterfalls', 'Camping', 'Road Trips', 'International Travel',
+            'Temple Towns', 'National Parks', 'Scenic Villages'
+        ],
+    };
+
+    const favouritesCategories = [
+        { key: 'hobbies', label: 'Hobbies' },
+        { key: 'sports', label: 'Sports' },
+        { key: 'movies', label: 'Movies' },
+        { key: 'read', label: 'Read' },
+        { key: 'tvShows', label: 'TV Shows' },
+        { key: 'destinations', label: 'Destinations' },
+    ];
+
+    const handleFavDone = (key, selectedItems) => {
+        setFavouritesData(prev => {
+            const updated = { ...prev, [key]: selectedItems };
+            localStorage.setItem('userFavourites', JSON.stringify(updated));
+            return updated;
+        });
+        setActiveFavModal(null);
+    };
     const [incomeSearchTerm, setIncomeSearchTerm] = useState('');
+
+    useEffect(() => {
+        if (!showProfilePreview) return undefined;
+        const previousOverflow = document.body.style.overflow;
+        const onKeyDown = (event) => {
+            if (event.key === 'Escape') {
+                setShowProfilePreview(false);
+            }
+        };
+
+        document.body.style.overflow = 'hidden';
+        document.addEventListener('keydown', onKeyDown);
+        return () => {
+            document.body.style.overflow = previousOverflow;
+            document.removeEventListener('keydown', onKeyDown);
+        };
+    }, [showProfilePreview]);
 
     useEffect(() => {
         if (location.state?.openPreferences) {
@@ -87,6 +189,9 @@ const Profile = () => {
         familyCity: '',
         organizationName: '',
         settlingAbroad: '',
+        havingChildren: '',
+        numberOfChildren: '',
+        residentialStatus: '',
     });
 
     const [preferenceData, setPreferenceData] = useState({
@@ -105,11 +210,17 @@ const Profile = () => {
         prefMotherTongue: '',
         prefPhysicalStatus: '',
         prefEmploymentType: '',
+        prefFamilyStatus: '',
+        prefFamilyType: '',
+        prefLivingWithParents: '',
+        prefDietary: '',
+        prefSmoking: '',
+        prefDrinking: '',
     });
 
     const [editForm, setEditForm] = useState({});
     const [prefForm, setPrefForm] = useState({});
-    const [isEditingPreference, setIsEditingPreference] = useState(false);
+    const [activePrefEditor, setActivePrefEditor] = useState(null); // e.g. 'basic', 'education', etc.
 
     const occupations = ["Software Professional", "Manager", "Engineer", "Doctor", "Teacher", "Banker", "Civil Services", "Business Owner", "Actor/Model", "Other"];
     const currencies = ["INR", "USD", "EUR", "GBP", "AED", "SGD", "MYR", "LKR"];
@@ -132,6 +243,10 @@ const Profile = () => {
                 if (savedPrefs) {
                     try { setPreferenceData(prev => ({ ...prev, ...JSON.parse(savedPrefs) })); } catch (e) { }
                 }
+                const savedFavs = localStorage.getItem('userFavourites');
+                if (savedFavs) {
+                    try { setFavouritesData(prev => ({ ...prev, ...JSON.parse(savedFavs) })); } catch (e) { }
+                }
             }
         }
     }, []);
@@ -153,7 +268,7 @@ const Profile = () => {
         if (name === 'religion') {
             setEditForm(prev => ({ ...prev, religion: value, caste: '', sect: '' }));
         } else if (name === 'country') {
-            setEditForm(prev => ({ ...prev, country: value, state: '', city: '' }));
+            setEditForm(prev => ({ ...prev, country: value, state: '', city: '', residentialStatus: value === 'India' ? '' : prev.residentialStatus }));
         } else if (name === 'state') {
             setEditForm(prev => ({ ...prev, state: value, city: '' }));
         } else {
@@ -243,7 +358,25 @@ const Profile = () => {
         return cleaned.length >= 7 && cleaned.length <= 15;
     };
 
+    const calculateAge = (dob) => {
+        const birthDate = new Date(dob);
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+        }
+        return age;
+    };
+
     const handleSaveSection = () => {
+        if (editingSection === 'basic' && editForm.dob) {
+            const age = calculateAge(editForm.dob);
+            if (age < 18) {
+                setAgeError('Age should be above 18.');
+                return;
+            }
+        }
         if (editingSection === 'contact') {
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (editForm.email && !emailRegex.test(editForm.email)) {
@@ -257,6 +390,7 @@ const Profile = () => {
         }
         setEmailError('');
         setMobileError('');
+        setAgeError('');
         setProfileData(editForm);
         localStorage.setItem('userProfile', JSON.stringify(editForm));
         setEditingSection(null);
@@ -264,7 +398,7 @@ const Profile = () => {
 
     const handleEditPreferenceClick = () => {
         setPrefForm({ ...preferenceData });
-        setIsEditingPreference(true);
+        setActivePrefEditor('generic');
     };
 
     const handlePrefFormChange = (e) => {
@@ -283,7 +417,7 @@ const Profile = () => {
     const handlePrefSave = () => {
         setPreferenceData(prefForm);
         localStorage.setItem('userPreferences', JSON.stringify(prefForm));
-        setIsEditingPreference(false);
+        setActivePrefEditor(null);
     };
 
     const calculateCompletion = () => {
@@ -315,6 +449,71 @@ const Profile = () => {
     const getLocationString = () => {
         const parts = [profileData.city, profileData.state, profileData.country].filter(Boolean);
         return parts.length > 0 ? parts.join(', ') : 'Not specified';
+    };
+
+    const getDateFromProfile = () => {
+        if (profileData.dob) {
+            const direct = new Date(profileData.dob);
+            if (!Number.isNaN(direct.getTime())) return direct;
+        }
+
+        if (profileData.dobDay && profileData.dobMonth && profileData.dobYear) {
+            const monthIndexMap = {
+                jan: 0, january: 0,
+                feb: 1, february: 1,
+                mar: 2, march: 2,
+                apr: 3, april: 3,
+                may: 4,
+                jun: 5, june: 5,
+                jul: 6, july: 6,
+                aug: 7, august: 7,
+                sep: 8, sept: 8, september: 8,
+                oct: 9, october: 9,
+                nov: 10, november: 10,
+                dec: 11, december: 11,
+            };
+            const normalizedMonth = String(profileData.dobMonth).trim().toLowerCase();
+            const monthIndex = monthIndexMap[normalizedMonth];
+            if (monthIndex !== undefined) {
+                const parsed = new Date(Number(profileData.dobYear), monthIndex, Number(profileData.dobDay));
+                if (!Number.isNaN(parsed.getTime())) return parsed;
+            }
+        }
+        return null;
+    };
+
+    const previewDate = getDateFromProfile();
+    const previewAge = previewDate ? calculateAge(previewDate.toISOString().slice(0, 10)) : '';
+    const previewDobText = previewDate ? formatDate(previewDate.toISOString().slice(0, 10)) : 'Not specified';
+    const previewReligionText = [profileData.religion, profileData.sect, profileData.caste].filter(Boolean).join(' | ') || 'Religion not specified';
+    const previewFamilyLocation = [profileData.familyCity, profileData.familyState, profileData.familyCountry].filter(Boolean).join(', ') || profileData.familyLivingIn || 'Not specified';
+    const previewFamilyType = profileData.familyType || 'Not specified';
+    const previewBrothers = profileData.numberOfBrothers ?? profileData.brothers ?? '';
+    const previewSisters = profileData.numberOfSisters ?? profileData.sisters ?? '';
+    const previewMarriedBrothers = profileData.marriedBrothers ?? profileData.brothersMarried ?? '';
+    const previewMarriedSisters = profileData.marriedSisters ?? profileData.sistersMarried ?? '';
+    const previewDiet = profileData.dietaryHabit || profileData.diet || 'Not specified';
+    const previewHobbies = (favouritesData.hobbies && favouritesData.hobbies.length > 0) ? favouritesData.hobbies.join(', ') : (profileData.hobbies || 'Not specified');
+    const previewEducationPreference = preferenceData.prefEducation || "Doesn't Matter";
+    const previewOccupationPreference = preferenceData.prefOccupation || "Doesn't Matter";
+    const previewEmploymentPreference = preferenceData.prefEmploymentType || "Doesn't Matter";
+    const previewIncomePreference = preferenceData.prefIncome || "Doesn't Matter";
+    const previewCountryPreference = preferenceData.prefCountry || 'India';
+
+    // Pronouns based on gender
+    const pronounObj = profileData.gender === 'Female' ? 'her' : 'him';
+    const pronounSubj = profileData.gender === 'Female' ? 'she' : 'he';
+    const pronounPoss = profileData.gender === 'Female' ? 'her' : 'his';
+    const pronounObjCap = profileData.gender === 'Female' ? 'Her' : 'Him';
+    const pronounPossCap = profileData.gender === 'Female' ? 'Her' : 'His';
+
+    const openProfilePreview = (event) => {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        setPreviewTab('about');
+        setShowProfilePreview(true);
     };
 
     // Section edit modal renderer
@@ -371,9 +570,21 @@ const Profile = () => {
                             </div>
 
                             {/* Date of Birth */}
-                            <div className="bd-field">
+                            <div className="bd-field" style={{ position: 'relative' }}>
                                 <span className="bd-label">Date of Birth</span>
-                                <span className="bd-value">{formatDob(editForm.dob) || 'Not specified'}</span>
+                                <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+                                    <input
+                                        type="date"
+                                        name="dob"
+                                        value={editForm.dob || ''}
+                                        onChange={(e) => {
+                                            handleFormChange(e);
+                                            setAgeError('');
+                                        }}
+                                        style={{ border: '1px solid #e5e7eb', borderRadius: '4px', padding: '8px', outline: 'none', color: '#1a2a3a', fontFamily: 'inherit' }}
+                                    />
+                                    {ageError && <span style={{ color: '#e74c3c', fontSize: '0.8rem', marginTop: '5px' }}>{ageError}</span>}
+                                </div>
                             </div>
 
                             {/* Marital Status */}
@@ -384,13 +595,42 @@ const Profile = () => {
                                         <button
                                             key={opt}
                                             className={`bd-chip ${editForm.maritalStatus === opt ? 'active' : ''}`}
-                                            onClick={() => setEditForm(prev => ({ ...prev, maritalStatus: opt }))}
+                                            onClick={() => setEditForm(prev => {
+                                                const newForm = { ...prev, maritalStatus: opt };
+                                                if (opt === 'Never Married') {
+                                                    newForm.havingChildren = '';
+                                                    newForm.numberOfChildren = '';
+                                                }
+                                                return newForm;
+                                            })}
                                         >
                                             {opt}
                                         </button>
                                     ))}
                                 </div>
                             </div>
+
+                            {/* Having Children - shown only if marital status ≠ Never Married */}
+                            {editForm.maritalStatus && editForm.maritalStatus !== 'Never Married' && (
+                                <div className="bd-field" style={{ cursor: 'pointer' }} onClick={() => setActiveDropdown({ title: 'Having Children?', field: 'havingChildren', options: ['Yes', 'No'] })}>
+                                    <span className="bd-label">Having Children?</span>
+                                    <div className="bd-field-row">
+                                        <span className="bd-value">{editForm.havingChildren || 'Select'}</span>
+                                        <ChevronRight size={18} color="#9ca3af" />
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Number of Children - shown only if havingChildren = Yes */}
+                            {editForm.maritalStatus && editForm.maritalStatus !== 'Never Married' && editForm.havingChildren === 'Yes' && (
+                                <div className="bd-field" style={{ cursor: 'pointer' }} onClick={() => setActiveDropdown({ title: 'Number of Children', field: 'numberOfChildren', options: ['1', '2', '3', '4+'] })}>
+                                    <span className="bd-label">Number of Children</span>
+                                    <div className="bd-field-row">
+                                        <span className="bd-value">{editForm.numberOfChildren || 'Select'}</span>
+                                        <ChevronRight size={18} color="#9ca3af" />
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Height */}
                             <div className="bd-field" style={{ cursor: 'pointer' }} onClick={() => setActiveDropdown({ title: 'Height', field: 'height', options: ["4ft 5in (134 cm)", "4ft 6in (137 cm)", "4ft 7in (139 cm)", "4ft 8in (142 cm)", "4ft 9in (144 cm)", "4ft 10in (147 cm)", "4ft 11in (149 cm)", "5ft (152 cm)", "5ft 1in (154 cm)", "5ft 2in (157 cm)", "5ft 3in (160 cm)", "5ft 4in (162 cm)", "5ft 5in (165 cm)", "5ft 6in (167 cm)", "5ft 7in (170 cm)", "5ft 8in (172 cm)", "5ft 9in (175 cm)", "5ft 10in (177 cm)", "5ft 11in (180 cm)", "6ft (182 cm)", "6ft 1in (185 cm)", "6ft 2in (187 cm)"] })}>
@@ -449,14 +689,23 @@ const Profile = () => {
                                         <span className="bd-value" style={{ flex: 1, color: editForm.country ? '#1a2a3a' : '#9ca3af' }}>{editForm.country || 'Country'}</span>
                                         <ChevronRight size={18} color="#9ca3af" />
                                     </div>
-                                    <div className="bd-field-row" onClick={() => editForm.country && setActiveDropdown({ title: 'State', field: 'state', options: getStates(editForm.country) })} style={{ padding: '14px', border: '1px solid #e5e7eb', borderRadius: '8px', cursor: editForm.country ? 'pointer' : 'not-allowed', opacity: editForm.country ? 1 : 0.6 }}>
-                                        <span className="bd-value" style={{ flex: 1, color: editForm.state ? '#1a2a3a' : '#9ca3af' }}>{editForm.state || 'State'}</span>
-                                        <ChevronRight size={18} color="#9ca3af" />
-                                    </div>
-                                    <div className="bd-field-row" onClick={() => editForm.state && setActiveDropdown({ title: 'City', field: 'city', options: getCities(editForm.country, editForm.state) })} style={{ padding: '14px', border: '1px solid #e5e7eb', borderRadius: '8px', cursor: editForm.state ? 'pointer' : 'not-allowed', opacity: editForm.state ? 1 : 0.6 }}>
-                                        <span className="bd-value" style={{ flex: 1, color: editForm.city ? '#1a2a3a' : '#9ca3af' }}>{editForm.city || 'City'}</span>
-                                        <ChevronRight size={18} color="#9ca3af" />
-                                    </div>
+                                    {editForm.country === 'India' ? (
+                                        <>
+                                            <div className="bd-field-row" onClick={() => editForm.country && setActiveDropdown({ title: 'State', field: 'state', options: getStates(editForm.country) })} style={{ padding: '14px', border: '1px solid #e5e7eb', borderRadius: '8px', cursor: editForm.country ? 'pointer' : 'not-allowed', opacity: editForm.country ? 1 : 0.6 }}>
+                                                <span className="bd-value" style={{ flex: 1, color: editForm.state ? '#1a2a3a' : '#9ca3af' }}>{editForm.state || 'State'}</span>
+                                                <ChevronRight size={18} color="#9ca3af" />
+                                            </div>
+                                            <div className="bd-field-row" onClick={() => editForm.state && setActiveDropdown({ title: 'City', field: 'city', options: getCities(editForm.country, editForm.state) })} style={{ padding: '14px', border: '1px solid #e5e7eb', borderRadius: '8px', cursor: editForm.state ? 'pointer' : 'not-allowed', opacity: editForm.state ? 1 : 0.6 }}>
+                                                <span className="bd-value" style={{ flex: 1, color: editForm.city ? '#1a2a3a' : '#9ca3af' }}>{editForm.city || 'City'}</span>
+                                                <ChevronRight size={18} color="#9ca3af" />
+                                            </div>
+                                        </>
+                                    ) : editForm.country ? (
+                                        <div className="bd-field-row" onClick={() => setActiveDropdown({ title: 'Residential Status', field: 'residentialStatus', options: ['Citizen', 'Permanent Resident', 'Work Permit', 'Student Visa', 'Temporary Visa', 'Other'] })} style={{ padding: '14px', border: '1px solid #e5e7eb', borderRadius: '8px', cursor: 'pointer' }}>
+                                            <span className="bd-value" style={{ flex: 1, color: editForm.residentialStatus ? '#1a2a3a' : '#9ca3af' }}>{editForm.residentialStatus || 'Residential Status'}</span>
+                                            <ChevronRight size={18} color="#9ca3af" />
+                                        </div>
+                                    ) : null}
                                 </div>
                             </div>
 
@@ -1121,10 +1370,6 @@ const Profile = () => {
                                 )}
                             </div>
 
-                            <div className="bd-field">
-                                <span className="bd-label">Hobbies</span>
-                                <input type="text" className="bd-value-input" name="hobbies" value={editForm.hobbies || ''} onChange={handleFormChange} placeholder="e.g. Reading, Traveling" />
-                            </div>
                         </div>
 
                         <div className="bd-save-area">
@@ -1194,11 +1439,19 @@ const Profile = () => {
                             return (
                                 <label key={optVal + idx} className={`bd-income-option ${editForm[activeDropdown.field] === optVal ? 'selected' : ''}`} onClick={() => {
                                     if (activeDropdown.field === 'country') {
-                                        setEditForm(prev => ({ ...prev, country: optVal, state: '', city: '' }));
+                                        setEditForm(prev => ({ ...prev, country: optVal, state: '', city: '', residentialStatus: optVal === 'India' ? '' : prev.residentialStatus }));
                                     } else if (activeDropdown.field === 'state') {
                                         setEditForm(prev => ({ ...prev, state: optVal, city: '' }));
                                     } else if (activeDropdown.field === 'religion') {
                                         setEditForm(prev => ({ ...prev, religion: optVal, caste: '', sect: '' }));
+                                    } else if (activeDropdown.field === 'havingChildren') {
+                                        setEditForm(prev => {
+                                            const newForm = { ...prev, havingChildren: optVal };
+                                            if (optVal !== 'Yes') {
+                                                newForm.numberOfChildren = '';
+                                            }
+                                            return newForm;
+                                        });
                                     } else {
                                         setEditForm(prev => ({ ...prev, [activeDropdown.field]: optVal }));
                                     }
@@ -1241,7 +1494,14 @@ const Profile = () => {
                                 ' Add Photos'
                             )}
                         </button>
-                        <button className="ep-eye-btn"><Eye size={18} /></button>
+                        <button
+                            type="button"
+                            className="ep-eye-btn"
+                            onClick={openProfilePreview}
+                            aria-label="View profile preview"
+                        >
+                            <Eye size={18} />
+                        </button>
                     </div>
                     <div className="ep-hero-info">
                         <h1 className="ep-hero-name">{profileData.fullName}</h1>
@@ -1306,10 +1566,13 @@ const Profile = () => {
                                     <span>Profile managed by {profileData.profileFor || 'Self'}</span>
                                 </div>
                             </div>
-                            <div className="ep-add-row">
-                                <span className="ep-add-label">Disability, Thalassemia, HIV+</span>
-                                <span className="ep-add-link" onClick={() => handleEditSection('basic')}>Add</span>
-                            </div>
+                            {(!profileData.height || !profileData.religion || !profileData.motherTongue || !profileData.country || !profileData.income || !profileData.dob || !profileData.maritalStatus) && (
+                                <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                                    <button className="ep-empty-add-action" onClick={() => handleEditSection('basic')} style={{ margin: 0 }}>
+                                        <Plus size={16} /> Add Basic Details
+                                    </button>
+                                </div>
+                            )}
                         </div>
 
                         {/* About Me */}
@@ -1321,7 +1584,16 @@ const Profile = () => {
                                 </div>
                                 <button className="ep-edit-btn" onClick={() => handleEditSection('about')}><Edit2 size={18} /></button>
                             </div>
-                            <p className="ep-about-text">{profileData.about || 'Write something about yourself...'}</p>
+                            {profileData.about ? (
+                                <p className="ep-about-text">{profileData.about}</p>
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                                    <p className="ep-about-text" style={{ fontStyle: 'italic', margin: 0 }}>Write something about yourself...</p>
+                                    <button className="ep-empty-add-action" onClick={() => handleEditSection('about')}>
+                                        <Plus size={16} /> Add About Me
+                                    </button>
+                                </div>
+                            )}
                         </div>
 
                         {/* Education */}
@@ -1342,7 +1614,12 @@ const Profile = () => {
                                     </div>
                                 </div>
                             ) : (
-                                <p className="ep-empty-text">No education details added yet</p>
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                                    <p className="ep-empty-text" style={{ margin: 0 }}>No education details added yet</p>
+                                    <button className="ep-empty-add-action" onClick={() => handleEditSection('education')}>
+                                        <Plus size={16} /> Add Education
+                                    </button>
+                                </div>
                             )}
                         </div>
 
@@ -1384,12 +1661,19 @@ const Profile = () => {
                                     )}
                                 </>
                             ) : (
-                                <p className="ep-empty-text">No career details added yet</p>
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                                    <p className="ep-empty-text" style={{ margin: 0 }}>No career details added yet</p>
+                                    <button className="ep-empty-add-action" onClick={() => handleEditSection('career')}>
+                                        <Plus size={16} /> Add Career Details
+                                    </button>
+                                </div>
                             )}
-                            {(!profileData.organizationName || !profileData.settlingAbroad) && (
-                                <div className="ep-add-row">
-                                    <span className="ep-add-label">Organisation Name, Thoughts on settling abroad</span>
-                                    <span className="ep-add-link" onClick={() => handleEditSection('career')}>Add</span>
+                            {(!profileData.organizationName || !profileData.settlingAbroad) && profileData.occupation && (
+                                <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                                    <p style={{ color: '#64748b', fontSize: '0.95rem', margin: '0 0 12px 0' }}>Add Organisation Name, Thoughts on settling abroad</p>
+                                    <button className="ep-empty-add-action" onClick={() => handleEditSection('career')} style={{ margin: 0 }}>
+                                        <Plus size={16} /> Add Missing Details
+                                    </button>
                                 </div>
                             )}
                         </div>
@@ -1415,7 +1699,12 @@ const Profile = () => {
                                 )}
                             </div>
                             {!profileData.fatherOccupation && !profileData.motherOccupation && (
-                                <p className="ep-empty-text">No family details added yet</p>
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', marginTop: '10px' }}>
+                                    <p className="ep-empty-text" style={{ margin: 0 }}>No family details added yet</p>
+                                    <button className="ep-empty-add-action" onClick={() => handleEditSection('family')}>
+                                        <Plus size={16} /> Add Family Details
+                                    </button>
+                                </div>
                             )}
                         </div>
 
@@ -1443,9 +1732,11 @@ const Profile = () => {
                                     <Settings size={20} color="#9ca3af" style={{ cursor: 'pointer' }} onClick={() => setShowPrivacyModal(true)} />
                                 </div>
                             </div>
-                            <div className="ep-add-row" style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span className="ep-add-label" style={{ color: '#9ca3af', fontSize: '1rem' }}>Alternate Email, Alternate Mobile No.</span>
-                                <span className="ep-add-link" onClick={() => handleEditSection('contact')} style={{ color: '#c0756b', fontWeight: '500', cursor: 'pointer', fontSize: '1rem' }}>Add</span>
+                            <div style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                                <p style={{ color: '#64748b', fontSize: '0.95rem', margin: '0 0 12px 0' }}>Add Alternate Email, Alternate Mobile No.</p>
+                                <button className="ep-empty-add-action" onClick={() => handleEditSection('contact')} style={{ margin: 0 }}>
+                                    <Plus size={16} /> Add Additional Contact
+                                </button>
                             </div>
                         </div>
 
@@ -1476,21 +1767,32 @@ const Profile = () => {
                             </div>
 
                             <h4 className="ep-subsection-title" style={{ marginTop: '32px' }}>My Favourites</h4>
-                            <div style={{ backgroundColor: '#fff3f5', borderRadius: '8px', padding: '24px 16px', marginTop: '12px' }}>
-                                <p style={{ color: '#1a2a3a', fontSize: '0.95rem', fontWeight: 600, margin: '0 0 16px 0' }}>Add more interests to attract profiles!</p>
-                                <div className="ep-favourites-tags" style={{ gap: '10px' }}>
-                                    {['Interests', 'Languages', 'Cuisine', 'Music', 'Dress'].map(tag => (
-                                        <button key={tag} className="ep-fav-tag" onClick={() => handleEditSection('lifestyle')} style={{ backgroundColor: 'transparent', border: '1.5px solid #fecaca', color: '#e74c3c', padding: '8px 16px', borderRadius: '24px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                            {tag === 'Interests' && <Puzzle size={16} strokeWidth={2} />}
-                                            {tag === 'Languages' && <MessagesSquare size={16} strokeWidth={2} />}
-                                            {tag === 'Cuisine' && <ChefHat size={16} strokeWidth={2} />}
-                                            {tag === 'Music' && <Music size={16} strokeWidth={2} />}
-                                            {tag === 'Dress' && <Shirt size={16} strokeWidth={2} />}
-                                            {tag}
-                                        </button>
-                                    ))}
-                                </div>
+                            <div className="fav-categories-list">
+                                {favouritesCategories.map(cat => (
+                                    <div
+                                        key={cat.key}
+                                        className="fav-category-item"
+                                        onClick={() => setActiveFavModal(cat.key)}
+                                    >
+                                        <span className="fav-category-label">{cat.label}</span>
+                                        {favouritesData[cat.key] && favouritesData[cat.key].length > 0 ? (
+                                            <span className="fav-category-values">
+                                                {favouritesData[cat.key].join(', ')}
+                                            </span>
+                                        ) : (
+                                            <span className="fav-category-empty">Tap to add</span>
+                                        )}
+                                    </div>
+                                ))}
                             </div>
+
+                            {(!profileData.drinking || !profileData.dietaryHabit || !profileData.smoking || !profileData.hobbies) && (
+                                <div style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                                    <button className="ep-empty-add-action" onClick={() => handleEditSection('lifestyle')} style={{ margin: 0 }}>
+                                        <Plus size={16} /> Add Lifestyle Details
+                                    </button>
+                                </div>
+                            )}
                         </div>
 
                         {/* Logout */}
@@ -1504,39 +1806,361 @@ const Profile = () => {
 
                 {activeTab === 'looking' && (
                     <div className="ep-about-content">
+
+                        {/* Partner's Basic Details */}
                         <div className="ep-section-card">
                             <div className="ep-section-header">
                                 <div>
-                                    <h3 className="ep-section-title">Partner Preferences</h3>
-                                    <p className="ep-section-subtitle">What you're looking for in a partner</p>
+                                    <h3 className="ep-section-title">Partner's Basic Details</h3>
+                                    <p className="ep-section-subtitle">Basic preferences for your life partner</p>
                                 </div>
-                                <button className="ep-edit-btn" onClick={handleEditPreferenceClick}><Edit2 size={18} /></button>
+                                <button className="ep-edit-btn" onClick={() => setActivePrefEditor('basic')}><Edit2 size={18} /></button>
                             </div>
                             <div className="ep-detail-list">
-                                <div className="ep-detail-item"><Calendar size={18} className="ep-detail-icon" /><span>Age: {preferenceData.prefAgeFrom || '18'} - {preferenceData.prefAgeTo || '30'} years</span></div>
-                                {preferenceData.prefHeightFrom && <div className="ep-detail-item"><Ruler size={18} className="ep-detail-icon" /><span>Height: {preferenceData.prefHeightFrom} - {preferenceData.prefHeightTo}</span></div>}
-                                {preferenceData.prefReligion && <div className="ep-detail-item"><Globe2 size={18} className="ep-detail-icon" /><span>Religion: {preferenceData.prefReligion}{preferenceData.prefCaste ? ` - ${preferenceData.prefCaste}` : ''}</span></div>}
-                                {preferenceData.prefMotherTongue && <div className="ep-detail-item"><Globe2 size={18} className="ep-detail-icon" /><span>Mother Tongue: {preferenceData.prefMotherTongue}</span></div>}
-                                {preferenceData.prefMaritalStatus && <div className="ep-detail-item"><Heart size={18} className="ep-detail-icon" /><span>Marital Status: {preferenceData.prefMaritalStatus}</span></div>}
-                                {preferenceData.prefEducation && <div className="ep-detail-item"><GraduationCap size={18} className="ep-detail-icon" /><span>Education: {preferenceData.prefEducation}</span></div>}
-                                {preferenceData.prefOccupation && <div className="ep-detail-item"><Briefcase size={18} className="ep-detail-icon" /><span>Occupation: {preferenceData.prefOccupation}</span></div>}
-                                {preferenceData.prefCountry && <div className="ep-detail-item"><MapPin size={18} className="ep-detail-icon" /><span>Location: {[preferenceData.prefCity, preferenceData.prefState, preferenceData.prefCountry].filter(Boolean).join(', ')}</span></div>}
+                                <div className="ep-detail-item">
+                                    <Calendar size={18} className="ep-detail-icon" />
+                                    <span>{preferenceData.prefAgeFrom || '18'} years - {preferenceData.prefAgeTo || '30'} years</span>
+                                </div>
+                                <div className="ep-detail-item">
+                                    <Ruler size={18} className="ep-detail-icon" />
+                                    <span>{preferenceData.prefHeightFrom && preferenceData.prefHeightTo ? `${preferenceData.prefHeightFrom} - ${preferenceData.prefHeightTo}` : "Doesn't Matter"}</span>
+                                </div>
+                                <div className="ep-detail-item">
+                                    <MapPin size={18} className="ep-detail-icon" />
+                                    <span>{preferenceData.prefCountry || "India"}</span>
+                                </div>
+                                <div className="ep-detail-item">
+                                    <Heart size={18} className="ep-detail-icon" />
+                                    <span>{preferenceData.prefMaritalStatus || "Never Married"}</span>
+                                </div>
+                                <div className="ep-detail-item">
+                                    <Users size={18} className="ep-detail-icon" />
+                                    <span>Profile managed by {profileData.profileFor || "Doesn't Matter"}</span>
+                                </div>
                             </div>
                         </div>
+
+
+                        {/* Partner's Education and Occupation */}
+                        <div className="ep-section-card">
+                            <div className="ep-section-header">
+                                <div>
+                                    <h3 className="ep-section-title">Partner's Education and Occupation</h3>
+                                </div>
+                                <button className="ep-edit-btn" onClick={() => setActivePrefEditor('education')}><Edit2 size={18} /></button>
+                            </div>
+                            <div className="ep-pref-list">
+                                <div className="ep-pref-row">
+                                    <div className="ep-icon-circle"><GraduationCap size={20} /></div>
+                                    <div>
+                                        <strong>Highest degree achieved</strong>
+                                        <p className="ep-sub-text">{preferenceData.prefEducation || "Doesn't Matter"}</p>
+                                    </div>
+                                </div>
+                                <div className="ep-pref-row">
+                                    <div className="ep-icon-circle"><Briefcase size={20} /></div>
+                                    <div>
+                                        <strong>Occupation could be</strong>
+                                        <p className="ep-sub-text">{preferenceData.prefOccupation || "Doesn't Matter"}</p>
+                                    </div>
+                                </div>
+                                <div className="ep-pref-row">
+                                    <div className="ep-icon-circle"><BadgeCheck size={20} /></div>
+                                    <div>
+                                        <strong>Employment type</strong>
+                                        <p className="ep-sub-text">{preferenceData.prefEmploymentType || "Doesn't Matter"}</p>
+                                    </div>
+                                </div>
+                                <div className="ep-pref-row" style={{ borderBottom: 'none' }}>
+                                    <div className="ep-icon-circle">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2" /><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" /></svg>
+                                    </div>
+                                    <div>
+                                        <strong>Should be earning</strong>
+                                        <p className="ep-sub-text">{preferenceData.prefIncome || "Doesn't Matter"}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Partner's Religion and Ethnicity */}
+                        <div className="ep-section-card">
+                            <div className="ep-section-header">
+                                <div>
+                                    <h3 className="ep-section-title">Partner's Religion and Ethnicity</h3>
+                                </div>
+                                <button className="ep-edit-btn" onClick={() => setActivePrefEditor('religion')}><Edit2 size={18} /></button>
+                            </div>
+                            <div className="ep-pref-list">
+                                <div className="ep-pref-row">
+                                    <div className="ep-icon-circle"><Globe2 size={20} /></div>
+                                    <div>
+                                        <strong>Religion</strong>
+                                        <p className="ep-sub-text">{preferenceData.prefReligion || "Doesn't Matter"}</p>
+                                    </div>
+                                </div>
+                                <div className="ep-pref-row">
+                                    <div className="ep-icon-circle">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" /><path d="M7 7h10" /><path d="M7 12h10" /><path d="M7 17h10" /></svg>
+                                    </div>
+                                    <div>
+                                        <strong>Sect</strong>
+                                        <p className="ep-sub-text">{preferenceData.prefSect || "Doesn't Matter"}</p>
+                                    </div>
+                                </div>
+                                <div className="ep-pref-row">
+                                    <div className="ep-icon-circle">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" /><path d="M7 7h10" /><path d="M7 12h10" /><path d="M7 17h10" /></svg>
+                                    </div>
+                                    <div>
+                                        <strong>Caste</strong>
+                                        <p className="ep-sub-text">{preferenceData.prefCaste || "Doesn't Matter"}</p>
+                                    </div>
+                                </div>
+                                <div className="ep-pref-row" style={{ borderBottom: (preferenceData.prefReligion?.trim() === 'Hindu') ? '1px solid #f0f0f0' : 'none' }}>
+                                    <div className="ep-icon-circle">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
+                                    </div>
+                                    <div>
+                                        <strong>Mother Tongue</strong>
+                                        <p className="ep-sub-text">{preferenceData.prefMotherTongue || "Doesn't Matter"}</p>
+                                    </div>
+                                </div>
+                                {preferenceData.prefReligion?.trim() === 'Hindu' && (
+                                    <div className="ep-pref-row" style={{ borderBottom: 'none' }}>
+                                        <div className="ep-icon-circle">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 2a10 10 0 0 1 10 10" /></svg>
+                                        </div>
+                                        <div>
+                                            <strong>Horoscope</strong>
+                                            <p className="ep-sub-text">{preferenceData.prefHoroscope || "Doesn't Matter"}</p>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Partner's Family Details */}
+                        <div className="ep-section-card">
+                            <div className="ep-section-header">
+                                <div>
+                                    <h3 className="ep-section-title">Partner's Family Details</h3>
+                                </div>
+                                <button className="ep-edit-btn" onClick={() => setActivePrefEditor('family')}><Edit2 size={18} /></button>
+                            </div>
+                            <div className="ep-pref-list">
+                                <div className="ep-pref-row">
+                                    <div className="ep-icon-circle"><Users size={20} /></div>
+                                    <div>
+                                        <strong>Family Status</strong>
+                                        <p className="ep-sub-text">{preferenceData.prefFamilyStatus || "Doesn't Matter"}</p>
+                                    </div>
+                                </div>
+                                <div className="ep-pref-row">
+                                    <div className="ep-icon-circle"><Users size={20} /></div>
+                                    <div>
+                                        <strong>Family Type</strong>
+                                        <p className="ep-sub-text">{preferenceData.prefFamilyType || "Doesn't Matter"}</p>
+                                    </div>
+                                </div>
+                                <div className="ep-pref-row" style={{ borderBottom: 'none' }}>
+                                    <div className="ep-icon-circle"><Users size={20} /></div>
+                                    <div>
+                                        <strong>Living with Parents</strong>
+                                        <p className="ep-sub-text">{preferenceData.prefLivingWithParents || "Doesn't Matter"}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Partner's Lifestyle and Appearance */}
+                        <div className="ep-section-card">
+                            <div className="ep-section-header">
+                                <div>
+                                    <h3 className="ep-section-title">Partner's Lifestyle and Appearance</h3>
+                                </div>
+                                <button className="ep-edit-btn" onClick={() => setActivePrefEditor('lifestyle')}><Edit2 size={18} /></button>
+                            </div>
+                            <div className="ep-pref-list">
+                                <div className="ep-pref-row">
+                                    <div className="ep-icon-circle"><Wine size={20} /></div>
+                                    <div>
+                                        <strong>Drinking Habits</strong>
+                                        <p className="ep-sub-text">{preferenceData.prefDrinking || "Doesn't Matter"}</p>
+                                    </div>
+                                </div>
+                                <div className="ep-pref-row">
+                                    <div className="ep-icon-circle"><Utensils size={20} /></div>
+                                    <div>
+                                        <strong>Dietary Habits</strong>
+                                        <p className="ep-sub-text">{preferenceData.prefDietary || "Doesn't Matter"}</p>
+                                    </div>
+                                </div>
+                                <div className="ep-pref-row">
+                                    <div className="ep-icon-circle"><Cigarette size={20} /></div>
+                                    <div>
+                                        <strong>Smoking Habits</strong>
+                                        <p className="ep-sub-text">{preferenceData.prefSmoking || "Doesn't Matter"}</p>
+                                    </div>
+                                </div>
+                                <div className="ep-pref-row" style={{ borderBottom: 'none' }}>
+                                    <div className="ep-icon-circle">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="m15 9-6 6" /><path d="m9 9 6 6" /></svg>
+                                    </div>
+                                    <div>
+                                        <strong>Special Cases</strong>
+                                        <p className="ep-sub-text">{preferenceData.prefPhysicalStatus || "Doesn't Matter"}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 )}
             </div>
 
+            {showProfilePreview && createPortal(
+                <div
+                    className="ppv-overlay"
+                    onClick={(event) => {
+                        if (event.target === event.currentTarget) {
+                            setShowProfilePreview(false);
+                        }
+                    }}
+                >
+                    <div className="ppv-container">
+                        <div className="ppv-topbar">
+                            <button type="button" className="ppv-back-btn" onClick={() => setShowProfilePreview(false)} aria-label="Close preview">
+                                <ArrowLeft size={24} />
+                            </button>
+                        </div>
+
+                        <div className="ppv-hero">
+                            <div className="ppv-hero-main">
+                                <div className="ppv-hero-photo">
+                                    {profileData.photo ? (
+                                        <img src={profileData.photo} alt={profileData.fullName || 'Profile'} />
+                                    ) : (
+                                        <div className="ppv-photo-placeholder">
+                                            <User size={88} color="#6b7c8e" />
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="ppv-hero-text">
+                                    <h2>{profileData.fullName || 'Member Name'}{previewAge ? `, ${previewAge}` : ''}</h2>
+                                    <p>ID - {profileData.uniqueId || uniqueId}</p>
+                                </div>
+                            </div>
+                            <div className="ppv-managed-strip">
+                                Profile is managed by {profileData.profileFor || 'Self'}
+                            </div>
+                            <div className="ppv-tabs">
+                                <button type="button" className={`ppv-tab ${previewTab === 'about' ? 'active' : ''}`} onClick={() => setPreviewTab('about')}>About {pronounObj}</button>
+                                <button type="button" className={`ppv-tab ${previewTab === 'family' ? 'active' : ''}`} onClick={() => setPreviewTab('family')}>{pronounPossCap} Family</button>
+                                <button type="button" className={`ppv-tab ${previewTab === 'looking' ? 'active' : ''}`} onClick={() => setPreviewTab('looking')}>What {pronounSubj} is looking for</button>
+                            </div>
+                        </div>
+
+                        <div className="ppv-content">
+                            {previewTab === 'about' && (
+                                <>
+                                    <div className="ppv-quick-grid">
+                                        <div className="ppv-quick-item"><Ruler size={18} /><span>{profileData.height || 'Not specified'}</span></div>
+                                        <div className="ppv-quick-item"><MapPin size={18} /><span>{getLocationString()}</span></div>
+                                        <div className="ppv-quick-item"><Globe2 size={18} /><span>{previewReligionText}</span></div>
+                                        <div className="ppv-quick-item"><Briefcase size={18} /><span>{profileData.income || 'No Income'}</span></div>
+                                        <div className="ppv-quick-item"><Languages size={18} /><span>Mother tongue is {profileData.motherTongue || 'not specified'}</span></div>
+                                        <div className="ppv-quick-item"><Heart size={18} /><span>{profileData.maritalStatus || 'Never Married'}</span></div>
+                                        <div className="ppv-quick-item"><Calendar size={18} /><span>{previewDobText}</span></div>
+                                    </div>
+
+                                    <div className="ppv-card">
+                                        <h3>About {pronounObj}</h3>
+                                        <p>{profileData.about || 'No description added yet.'}</p>
+                                    </div>
+
+                                    <div className="ppv-card">
+                                        <h3>{pronounPossCap} Education</h3>
+                                        <p>{profileData.education || 'Not specified'}</p>
+                                    </div>
+
+                                    <div className="ppv-card">
+                                        <h3>{pronounPossCap} Career</h3>
+                                        <p>{profileData.occupation || 'Not specified'}</p>
+                                        <span>{profileData.employmentType || 'Employment type not specified'}</span>
+                                    </div>
+                                </>
+                            )}
+
+                            {previewTab === 'family' && (
+                                <>
+                                    <div className="ppv-card">
+                                        <h3>{pronounPossCap} Family</h3>
+                                        <div className="ppv-row"><span>Family Type</span><strong>{previewFamilyType}</strong></div>
+                                        <div className="ppv-row"><span>Based Out Of</span><strong>{previewFamilyLocation}</strong></div>
+                                        <div className="ppv-row"><span>Family Status</span><strong>{profileData.familyStatus || 'Not specified'}</strong></div>
+                                        <div className="ppv-row"><span>Living With Parents</span><strong>{profileData.livingWithParents || 'Not specified'}</strong></div>
+                                        <div className="ppv-row"><span>Family Income</span><strong>{profileData.familyIncome || 'Not specified'}</strong></div>
+                                        <div className="ppv-row"><span>Father</span><strong>{profileData.fatherOccupation || 'Not specified'}</strong></div>
+                                        <div className="ppv-row"><span>Mother</span><strong>{profileData.motherOccupation || 'Not specified'}</strong></div>
+                                        <div className="ppv-row"><span>Siblings</span><strong>{previewBrothers || 0} Brothers, {previewSisters || 0} Sisters</strong></div>
+                                        <div className="ppv-row"><span>Married Siblings</span><strong>{previewMarriedBrothers || 0} Brothers, {previewMarriedSisters || 0} Sisters</strong></div>
+                                    </div>
+
+                                    <div className="ppv-card">
+                                        <h3>{pronounPossCap} Lifestyle and Interests</h3>
+                                        <div className="ppv-row"><span>Hobbies</span><strong>{previewHobbies}</strong></div>
+                                        <div className="ppv-row"><span>Diet</span><strong>{previewDiet}</strong></div>
+                                        <div className="ppv-row"><span>Drinking</span><strong>{profileData.drinking || 'Not specified'}</strong></div>
+                                        <div className="ppv-row"><span>Smoking</span><strong>{profileData.smoking || 'Not specified'}</strong></div>
+                                    </div>
+                                </>
+                            )}
+
+                            {previewTab === 'looking' && (
+                                <>
+                                    <div className="ppv-card">
+                                        <h3>What {pronounSubj} is looking for...</h3>
+                                        <p>{profileData.partnerPreference || 'These are the desired partner qualities.'}</p>
+                                    </div>
+
+                                    <div className="ppv-card">
+                                        <h3>Basic Details</h3>
+                                        <div className="ppv-row"><span>Height</span><strong>{preferenceData.prefHeightFrom && preferenceData.prefHeightTo ? `${preferenceData.prefHeightFrom} - ${preferenceData.prefHeightTo}` : "Doesn't Matter"}</strong></div>
+                                        <div className="ppv-row"><span>Age</span><strong>{preferenceData.prefAgeFrom || '18'} to {preferenceData.prefAgeTo || '30'} Years</strong></div>
+                                        <div className="ppv-row"><span>Marital Status</span><strong>{preferenceData.prefMaritalStatus || "Doesn't Matter"}</strong></div>
+                                        <div className="ppv-row"><span>Religion</span><strong>{preferenceData.prefReligion || "Doesn't Matter"}</strong></div>
+                                        <div className="ppv-row"><span>Mother Tongue</span><strong>{preferenceData.prefMotherTongue || "Doesn't Matter"}</strong></div>
+                                        <div className="ppv-row"><span>Country</span><strong>{previewCountryPreference}</strong></div>
+                                        <div className="ppv-row"><span>State</span><strong>{preferenceData.prefState || "Doesn't Matter"}</strong></div>
+                                        <div className="ppv-row"><span>City</span><strong>{preferenceData.prefCity || "Doesn't Matter"}</strong></div>
+                                    </div>
+
+                                    <div className="ppv-card">
+                                        <h3>Desired Education and Occupation</h3>
+                                        <div className="ppv-row"><span>Educational Level</span><strong>{previewEducationPreference}</strong></div>
+                                        <div className="ppv-row"><span>Occupation</span><strong>{previewOccupationPreference}</strong></div>
+                                        <div className="ppv-row"><span>Employment Type</span><strong>{previewEmploymentPreference}</strong></div>
+                                        <div className="ppv-row"><span>Earning</span><strong>{previewIncomePreference}</strong></div>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </div>,
+                document.body
+            )}
+
             {renderSectionModal()}
             {renderDropdownModal()}
 
-            {/* Preference Modal */}
-            {isEditingPreference && (
-                <div className="modal-overlay" onClick={() => setIsEditingPreference(false)}>
+            {/* Preference Modal (Generic - Other fields) */}
+            {activePrefEditor === 'generic' && (
+                <div className="modal-overlay" onClick={() => setActivePrefEditor(null)}>
                     <div className="modal-content" onClick={e => e.stopPropagation()}>
                         <div className="modal-header">
                             <h3>Edit Partner Preference</h3>
-                            <button className="modal-close" onClick={() => setIsEditingPreference(false)}><X size={24} /></button>
+                            <button className="modal-close" onClick={() => setActivePrefEditor(null)}><X size={24} /></button>
                         </div>
                         <div className="modal-body">
                             <div className="form-grid">
@@ -1599,7 +2223,7 @@ const Profile = () => {
                             </div>
                         </div>
                         <div className="modal-footer">
-                            <button className="btn btn-outline" onClick={() => setIsEditingPreference(false)}>Cancel</button>
+                            <button className="btn btn-outline" onClick={() => setActivePrefEditor(null)}>Cancel</button>
                             <button className="btn btn-primary" onClick={handlePrefSave}><Save size={16} /> Save</button>
                         </div>
                     </div>
@@ -1754,6 +2378,80 @@ const Profile = () => {
             )}
 
             {renderSectionModal()}
+
+            {/* Favourites Multi-Select Modal */}
+            {activeFavModal && (
+                <FavouritesModal
+                    title={favouritesCategories.find(c => c.key === activeFavModal)?.label || ''}
+                    options={favouritesOptions[activeFavModal] || []}
+                    selected={favouritesData[activeFavModal] || []}
+                    onDone={(selectedItems) => handleFavDone(activeFavModal, selectedItems)}
+                    onClose={() => setActiveFavModal(null)}
+                />
+            )}
+
+            {activePrefEditor === 'basic' && (
+                <PartnerBasicDetailsEditor
+                    initialData={preferenceData}
+                    onSave={(updatedData) => {
+                        setPreferenceData(updatedData);
+                        localStorage.setItem('userPreferences', JSON.stringify(updatedData));
+                        setActivePrefEditor(null);
+                    }}
+                    onClose={() => setActivePrefEditor(null)}
+                />
+            )}
+
+            {activePrefEditor === 'education' && (
+                <PartnerEducationEditor
+                    initialData={preferenceData}
+                    onSave={(updatedData) => {
+                        setPreferenceData(updatedData);
+                        localStorage.setItem('userPreferences', JSON.stringify(updatedData));
+                        setActivePrefEditor(null);
+                    }}
+                    onClose={() => setActivePrefEditor(null)}
+                />
+            )}
+
+            {activePrefEditor === 'religion' && (
+                <PartnerReligionEditor
+                    initialData={preferenceData}
+                    onSave={(updatedData) => {
+                        const newData = { ...preferenceData, ...updatedData };
+                        setPreferenceData(newData);
+                        localStorage.setItem('userPreferences', JSON.stringify(newData));
+                        setActivePrefEditor(null);
+                    }}
+                    onCancel={() => setActivePrefEditor(null)}
+                />
+            )}
+
+            {activePrefEditor === 'lifestyle' && (
+                <PartnerLifestyleEditor
+                    initialData={preferenceData}
+                    onSave={(updatedData) => {
+                        const newData = { ...preferenceData, ...updatedData };
+                        setPreferenceData(newData);
+                        localStorage.setItem('userPreferences', JSON.stringify(newData));
+                        setActivePrefEditor(null);
+                    }}
+                    onCancel={() => setActivePrefEditor(null)}
+                />
+            )}
+
+            {activePrefEditor === 'family' && (
+                <PartnerFamilyEditor
+                    initialData={preferenceData}
+                    onSave={(updatedData) => {
+                        const newData = { ...preferenceData, ...updatedData };
+                        setPreferenceData(newData);
+                        localStorage.setItem('userPreferences', JSON.stringify(newData));
+                        setActivePrefEditor(null);
+                    }}
+                    onCancel={() => setActivePrefEditor(null)}
+                />
+            )}
 
             <Footer />
         </div>

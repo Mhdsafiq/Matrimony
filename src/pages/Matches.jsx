@@ -1,16 +1,16 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import {
-    Users, Star, Eye, UserPlus, MapPin, Sparkles,
-    Camera, GraduationCap, Briefcase, Map, ChevronRight, User
+    Users, Star, Eye, UserPlus, MapPin, Sparkles, ChevronRight, User
 } from 'lucide-react';
 import './Matches.css';
 
 const Matches = () => {
     const navigate = useNavigate();
     const [activeCategory, setActiveCategory] = useState('your-matches');
+    const [viewEvents, setViewEvents] = useState([]);
 
     // Grouping the sidebar items as shown in the user's images
     const matchGroups = [
@@ -52,6 +52,79 @@ const Matches = () => {
     };
 
     const activeItem = getActiveItem();
+    const currentUserId = localStorage.getItem('uniqueId') || '';
+
+    useEffect(() => {
+        const events = JSON.parse(localStorage.getItem('profileViewEvents') || '[]');
+        setViewEvents(Array.isArray(events) ? events : []);
+    }, []);
+
+    const getLatestUniqueBy = (items, keyGetter) => {
+        const seen = new Set();
+        const latest = [];
+        items.forEach(item => {
+            const key = keyGetter(item);
+            if (!key || seen.has(key)) return;
+            seen.add(key);
+            latest.push(item);
+        });
+        return latest;
+    };
+
+    const viewedYouList = useMemo(() => {
+        if (!currentUserId) return [];
+        const filtered = viewEvents
+            .filter((event) => event?.type === 'profile_view' && event?.viewed?.uniqueId === currentUserId && event?.viewer?.uniqueId !== currentUserId)
+            .sort((a, b) => new Date(b.viewedAt) - new Date(a.viewedAt));
+        return getLatestUniqueBy(filtered, (event) => event.viewer?.uniqueId);
+    }, [viewEvents, currentUserId]);
+
+    const viewedByYouList = useMemo(() => {
+        if (!currentUserId) return [];
+        const filtered = viewEvents
+            .filter((event) => event?.type === 'profile_view' && event?.viewer?.uniqueId === currentUserId && event?.viewed?.uniqueId !== currentUserId)
+            .sort((a, b) => new Date(b.viewedAt) - new Date(a.viewedAt));
+        return getLatestUniqueBy(filtered, (event) => event.viewed?.uniqueId);
+    }, [viewEvents, currentUserId]);
+
+    const formatViewedTime = (iso) => {
+        if (!iso) return '';
+        const date = new Date(iso);
+        if (Number.isNaN(date.getTime())) return '';
+        return date.toLocaleString();
+    };
+
+    const renderProfileList = (records, mode) => (
+        <div className="viewed-list">
+            {records.map((event) => {
+                const person = mode === 'viewed-you' ? event.viewer : event.viewed;
+                const location = [person?.city, person?.state, person?.country].filter(Boolean).join(', ') || 'Location not specified';
+                return (
+                    <article className="viewed-card" key={event.id}>
+                        <div className="viewed-avatar">
+                            {person?.photo ? <img src={person.photo} alt={person.fullName || 'Member'} /> : <User size={22} />}
+                        </div>
+                        <div className="viewed-content">
+                            <h4>{person?.fullName || 'Member'}</h4>
+                            <p className="viewed-meta">ID - {person?.uniqueId || 'N/A'}</p>
+                            <p className="viewed-meta">{location}</p>
+                            <p className="viewed-time">Viewed on {formatViewedTime(event.viewedAt)}</p>
+                        </div>
+                    </article>
+                );
+            })}
+        </div>
+    );
+
+    const showViewedYou = activeCategory === 'viewed-you' && viewedYouList.length > 0;
+    const showViewedByYou = activeCategory === 'viewed-by-you' && viewedByYouList.length > 0;
+    const showEmpty = !(showViewedYou || showViewedByYou);
+
+    const emptyTitle = activeCategory === 'viewed-you'
+        ? 'No one has viewed your profile yet'
+        : activeCategory === 'viewed-by-you'
+            ? 'You have not viewed any profiles yet'
+            : 'You have no matches left';
 
     return (
         <div className="matches-page">
@@ -93,16 +166,29 @@ const Matches = () => {
                             <p>{activeItem.desc}</p>
                         </div>
 
-                        <div className="matches-body empty-state">
-                            <div className="illustration-container">
-                                <Users size={64} className="empty-icon" />
-                                <div className="search-overlay">
-                                    <div className="magnifier"></div>
-                                </div>
-                            </div>
-                            <h3>You have no matches left</h3>
-                            {activeCategory === 'your-matches' && (
-                                <button className="btn btn-outline change-pref-btn" onClick={() => navigate('/profile', { state: { openPreferences: true } })}>Change Preferences</button>
+                        <div className={`matches-body ${showEmpty ? 'empty-state' : ''}`}>
+                            {showViewedYou && renderProfileList(viewedYouList, 'viewed-you')}
+                            {showViewedByYou && renderProfileList(viewedByYouList, 'viewed-by-you')}
+
+                            {showEmpty && (
+                                <>
+                                    <div className="illustration-container">
+                                        <Users size={64} className="empty-icon" />
+                                        <div className="search-overlay">
+                                            <div className="magnifier"></div>
+                                        </div>
+                                    </div>
+                                    <h3>{emptyTitle}</h3>
+                                    {activeCategory === 'your-matches' && (
+                                        <button className="btn btn-outline change-pref-btn" onClick={() => navigate('/profile', { state: { openPreferences: true } })}>Change Preferences</button>
+                                    )}
+                                </>
+                            )}
+                            {activeCategory === 'viewed-you' && viewedYouList.length === 0 && (
+                                <p className="viewed-empty-note">Search and open profiles from another account to see activity here.</p>
+                            )}
+                            {activeCategory === 'viewed-by-you' && viewedByYouList.length === 0 && (
+                                <p className="viewed-empty-note">Search and open profiles to see your viewed list here.</p>
                             )}
                         </div>
                     </main>

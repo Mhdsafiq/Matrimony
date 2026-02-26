@@ -111,7 +111,10 @@ const Register = () => {
         sisters: '',
         sistersMarried: '',
         familyLivingIn: '',
-        contactAddress: ''
+        contactAddress: '',
+        havingChildren: '',
+        numberOfChildren: '',
+        residentialStatus: ''
     });
 
     const [registerMethod, setRegisterMethod] = useState('mobile'); // 'mobile' or 'email'
@@ -136,8 +139,20 @@ const Register = () => {
     // Validation for Step 0 (Registration)
     const validateJvStep0 = () => {
         const errs = {};
-        if (!formData.email) errs.email = 'Email is required';
-        if (!formData.mobile) errs.mobile = 'Mobile number is required';
+        if (!formData.email) {
+            errs.email = 'Email is required';
+        } else if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i.test(formData.email)) {
+            errs.email = 'Please enter a valid email.';
+        } else if (['test@example.com', 'admin@example.com'].includes(formData.email.toLowerCase())) {
+            errs.email = 'This email is already registered';
+        }
+
+        if (!formData.mobile) {
+            errs.mobile = 'Mobile number is required';
+        } else if (!/^\d{10}$/.test(formData.mobile)) {
+            errs.mobile = 'Phone number is invalid.';
+        }
+
         if (!formData.password || formData.password.length < 8) errs.password = 'Password must be at least 8 characters';
         if (!formData.profileFor) errs.profileFor = 'Please select who this profile is for';
         if (formData.profileFor && formData.profileFor !== 'Son' && formData.profileFor !== 'Daughter' && !formData.gender) {
@@ -165,13 +180,18 @@ const Register = () => {
                 age--;
             }
             if (age < 18) {
-                errs.dob = 'You must be at least 18 years old to register';
+                errs.dob = 'Age should be above 18.';
             }
         }
         if (!formData.motherTongue) errs.motherTongue = 'Mother tongue is required';
         if (!formData.religion) errs.religion = 'Religion is required';
         if (!formData.caste) errs.caste = 'Caste is required';
         if (!formData.height) errs.height = 'Height is required';
+        if (formData.religion === 'Hindu') {
+            if (!formData.horoscope) errs.horoscope = 'Horoscope is required';
+            if (!formData.placeOfBirth) errs.placeOfBirth = 'Place of birth is required';
+            if (!formData.timeOfBirth) errs.timeOfBirth = 'Time of birth is required';
+        }
         setJvErrors(errs);
         return Object.keys(errs).length === 0;
     };
@@ -180,8 +200,12 @@ const Register = () => {
     const validateJvStep2 = () => {
         const errs = {};
         if (!formData.country) errs.country = 'Country is required';
-        if (!formData.state) errs.state = 'State is required';
-        if (!formData.city) errs.city = 'City is required';
+        if (formData.country === 'India') {
+            if (!formData.state) errs.state = 'State is required';
+            if (!formData.city) errs.city = 'City is required';
+        } else if (formData.country) {
+            if (!formData.residentialStatus) errs.residentialStatus = 'Residential Status is required';
+        }
         if (!formData.education) errs.education = 'Highest Degree is required';
         if (!formData.employmentType) errs.employmentType = 'Employment is required';
         if (!formData.occupation) errs.occupation = 'Occupation is required';
@@ -274,7 +298,7 @@ const Register = () => {
         if (name === 'religion') {
             setFormData(prev => ({ ...prev, religion: value, caste: '', sect: '' }));
         } else if (name === 'country') {
-            setFormData(prev => ({ ...prev, country: value, state: '', city: '' }));
+            setFormData(prev => ({ ...prev, country: value, state: '', city: '', residentialStatus: value === 'India' ? '' : prev.residentialStatus }));
         } else if (name === 'state') {
             setFormData(prev => ({ ...prev, state: value, city: '' }));
         } else if (name === 'profileFor') {
@@ -285,6 +309,23 @@ const Register = () => {
             } else {
                 setFormData(prev => ({ ...prev, profileFor: value, gender: '' }));
             }
+        } else if (name === 'maritalStatus') {
+            setFormData(prev => {
+                const newData = { ...prev, maritalStatus: value };
+                if (value === 'Never Married') {
+                    newData.havingChildren = '';
+                    newData.numberOfChildren = '';
+                }
+                return newData;
+            });
+        } else if (name === 'havingChildren') {
+            setFormData(prev => {
+                const newData = { ...prev, havingChildren: value };
+                if (value !== 'Yes') {
+                    newData.numberOfChildren = '';
+                }
+                return newData;
+            });
         } else {
             setFormData(prev => ({ ...prev, [name]: value }));
         }
@@ -374,8 +415,8 @@ const Register = () => {
             newErrors.dob = "Date of Birth is required";
         } else {
             const age = calculateAge(formData.dob);
-            if (age < 21) {
-                newErrors.dob = "You must be at least 21 years old to register";
+            if (age < 18) {
+                newErrors.dob = "Age should be above 18.";
             }
         }
 
@@ -383,13 +424,20 @@ const Register = () => {
 
         if (registerMethod === 'mobile') {
             if (!formData.mobile) newErrors.mobile = "Mobile Number is required";
-            else if (!/^\d{10}$/.test(formData.mobile)) newErrors.mobile = "Invalid Mobile Number (10 digits)";
+            else if (!/^\d{10}$/.test(formData.mobile)) newErrors.mobile = "Phone number is invalid.";
             else if (!verification.mobile.verified) newErrors.mobile = "Please verify your mobile number";
         }
 
         if (registerMethod === 'email') {
-            if (!formData.email) newErrors.email = "Email is required";
-            else if (!verification.email.verified) newErrors.email = "Please verify your email address";
+            if (!formData.email) {
+                newErrors.email = "Email is required";
+            } else if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i.test(formData.email)) {
+                newErrors.email = "Please enter a valid email.";
+            } else if (['test@example.com', 'admin@example.com'].includes(formData.email.toLowerCase())) {
+                newErrors.email = 'This email is already registered';
+            } else if (!verification.email.verified) {
+                newErrors.email = "Please verify your email address";
+            }
         }
 
         if (!formData.password) newErrors.password = "Password is required";
@@ -406,7 +454,9 @@ const Register = () => {
         if (!formData.height) newErrors.height = "Height is required";
         if (!formData.religion) newErrors.religion = "Religion is required";
         if (!formData.caste) newErrors.caste = "Caste is required";
-        if (!formData.horoscope) newErrors.horoscope = "Horoscope is required";
+        if (formData.religion === 'Hindu' && !formData.horoscope) {
+            newErrors.horoscope = "Horoscope is required";
+        }
         if (!formData.smoking) newErrors.smoking = "Smoking habit is required";
         if (!formData.drinking) newErrors.drinking = "Drinking habit is required";
 
@@ -1077,8 +1127,19 @@ const Register = () => {
                                 <div className="jv-step0-input-row">
                                     <input type="email" name="email" className="jv-step0-input" placeholder="Your Email *" value={formData.email} onChange={handleInputChange} />
                                 </div>
-                                <div className="jv-step0-input-row">
-                                    <input type="tel" name="mobile" className="jv-step0-input" placeholder="Mobile No. *" value={formData.mobile} onChange={handleInputChange} />
+                                <div className="jv-step0-input-row" style={{ display: 'flex' }}>
+                                    <select
+                                        style={{ width: '80px', padding: '10px', border: '1px solid #d1d5db', borderRight: 'none', borderRadius: '4px 0 0 4px', outline: 'none', background: '#f3f4f6', fontSize: '1rem', color: '#1f2937' }}
+                                        value={isdCode}
+                                        onChange={(e) => setIsdCode(e.target.value)}
+                                    >
+                                        <option value="+91">+91</option>
+                                        <option value="+1">+1</option>
+                                        <option value="+44">+44</option>
+                                        <option value="+971">+971</option>
+                                        <option value="+61">+61</option>
+                                    </select>
+                                    <input type="tel" name="mobile" className="jv-step0-input" style={{ borderRadius: '0 4px 4px 0', borderLeft: '1px solid #d1d5db' }} placeholder="Mobile No. *" value={formData.mobile} onChange={handleInputChange} />
                                 </div>
                                 <div className="jv-step0-input-row">
                                     <input type="password" name="password" className="jv-step0-input" placeholder="Create New Password *" value={formData.password} onChange={handleInputChange} />
@@ -1241,6 +1302,38 @@ const Register = () => {
                                             </div>
                                         </div>
 
+                                        {formData.maritalStatus && formData.maritalStatus !== 'Never Married' && (
+                                            <div className="jv-form-row">
+                                                <label className="jv-label">Having Children?</label>
+                                                <div className="jv-input-group">
+                                                    <SearchableSelect
+                                                        name="havingChildren"
+                                                        value={formData.havingChildren}
+                                                        onChange={handleInputChange}
+                                                        placeholder="Select"
+                                                        options={['Yes', 'No']}
+                                                        className="full"
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {formData.maritalStatus && formData.maritalStatus !== 'Never Married' && formData.havingChildren === 'Yes' && (
+                                            <div className="jv-form-row">
+                                                <label className="jv-label">Number of Children</label>
+                                                <div className="jv-input-group">
+                                                    <SearchableSelect
+                                                        name="numberOfChildren"
+                                                        value={formData.numberOfChildren}
+                                                        onChange={handleInputChange}
+                                                        placeholder="Select"
+                                                        options={['1', '2', '3', '4+']}
+                                                        className="full"
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
+
                                         <div className="jv-form-row">
                                             <label className="jv-label">Height <span className="jv-asterisk">*</span></label>
                                             <div className="jv-input-group">
@@ -1255,48 +1348,53 @@ const Register = () => {
                                             </div>
                                         </div>
 
-                                        <div className="jv-subheading">Horoscope Details</div>
+                                        {formData.religion === 'Hindu' && (
+                                            <>
+                                                <div className="jv-subheading">Horoscope Details</div>
 
-                                        <div className="jv-form-row">
-                                            <label className="jv-label">Horoscope</label>
-                                            <div className="jv-input-group">
-                                                <SearchableSelect
-                                                    name="horoscope"
-                                                    value={formData.horoscope}
-                                                    onChange={handleInputChange}
-                                                    placeholder="Select Horoscope"
-                                                    options={horoscopes}
-                                                    className="full"
-                                                />
-                                            </div>
-                                        </div>
+                                                <div className="jv-form-row">
+                                                    <label className="jv-label">Horoscope (Rasi)</label>
+                                                    <div className="jv-input-group">
+                                                        <SearchableSelect
+                                                            name="horoscope"
+                                                            value={formData.horoscope}
+                                                            onChange={handleInputChange}
+                                                            placeholder="Select Horoscope"
+                                                            options={["Mesham (Aries)", "Rishabam (Taurus)", "Midhunam (Gemini)", "Kadagam (Cancer)", "Simmam (Leo)", "Kanni (Virgo)", "Thulam (Libra)", "Viruchigam (Scorpio)", "Dhanusu (Sagittarius)", "Magaram (Capricorn)", "Kumbam (Aquarius)", "Meenam (Pisces)", "Don't know"]}
+                                                            className="full"
+                                                        />
+                                                    </div>
+                                                </div>
 
-                                        <div className="jv-form-row">
-                                            <label className="jv-label">Time of Birth</label>
-                                            <div className="jv-input-group">
-                                                <input
-                                                    type="time"
-                                                    name="timeOfBirth"
-                                                    value={formData.timeOfBirth || ''}
-                                                    onChange={handleInputChange}
-                                                    className="jv-input"
-                                                />
-                                            </div>
-                                        </div>
+                                                <div className="jv-form-row">
+                                                    <label className="jv-label">Time of Birth</label>
+                                                    <div className="jv-input-group">
+                                                        <input
+                                                            type="time"
+                                                            name="timeOfBirth"
+                                                            value={formData.timeOfBirth || ''}
+                                                            onChange={handleInputChange}
+                                                            className="jv-input"
+                                                        />
+                                                    </div>
+                                                </div>
 
-                                        <div className="jv-form-row">
-                                            <label className="jv-label">Place of Birth</label>
-                                            <div className="jv-input-group">
-                                                <input
-                                                    type="text"
-                                                    name="placeOfBirth"
-                                                    value={formData.placeOfBirth || ''}
-                                                    onChange={handleInputChange}
-                                                    placeholder="Enter city of birth"
-                                                    className="jv-input"
-                                                />
-                                            </div>
-                                        </div>
+                                                <div className="jv-form-row">
+                                                    <label className="jv-label">Place of Birth</label>
+                                                    <div className="jv-input-group">
+                                                        <input
+                                                            type="text"
+                                                            name="placeOfBirth"
+                                                            value={formData.placeOfBirth || ''}
+                                                            onChange={handleInputChange}
+                                                            placeholder="Enter city of birth"
+                                                            className="jv-input"
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                            </>
+                                        )}
 
                                         <div className="jv-form-row jv-submit-row">
                                             {Object.keys(jvErrors).length > 0 && (
@@ -1329,35 +1427,53 @@ const Register = () => {
                                             </div>
                                         </div>
 
-                                        <div className="jv-form-row">
-                                            <label className="jv-label">State <span className="jv-asterisk">*</span></label>
-                                            <div className="jv-input-group">
-                                                <SearchableSelect
-                                                    name="state"
-                                                    value={formData.state}
-                                                    onChange={handleInputChange}
-                                                    placeholder="Select State"
-                                                    options={availableStates}
-                                                    disabled={!formData.country}
-                                                    className="full"
-                                                />
-                                            </div>
-                                        </div>
+                                        {formData.country === 'India' ? (
+                                            <>
+                                                <div className="jv-form-row">
+                                                    <label className="jv-label">State <span className="jv-asterisk">*</span></label>
+                                                    <div className="jv-input-group">
+                                                        <SearchableSelect
+                                                            name="state"
+                                                            value={formData.state}
+                                                            onChange={handleInputChange}
+                                                            placeholder="Select State"
+                                                            options={availableStates}
+                                                            disabled={!formData.country}
+                                                            className="full"
+                                                        />
+                                                    </div>
+                                                </div>
 
-                                        <div className="jv-form-row">
-                                            <label className="jv-label">City living in <span className="jv-asterisk">*</span></label>
-                                            <div className="jv-input-group">
-                                                <SearchableSelect
-                                                    name="city"
-                                                    value={formData.city}
-                                                    onChange={handleInputChange}
-                                                    placeholder="Select City"
-                                                    options={availableCities}
-                                                    disabled={!formData.state}
-                                                    className="full"
-                                                />
+                                                <div className="jv-form-row">
+                                                    <label className="jv-label">City living in <span className="jv-asterisk">*</span></label>
+                                                    <div className="jv-input-group">
+                                                        <SearchableSelect
+                                                            name="city"
+                                                            value={formData.city}
+                                                            onChange={handleInputChange}
+                                                            placeholder="Select City"
+                                                            options={availableCities}
+                                                            disabled={!formData.state}
+                                                            className="full"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </>
+                                        ) : formData.country ? (
+                                            <div className="jv-form-row">
+                                                <label className="jv-label">Residential Status <span className="jv-asterisk">*</span></label>
+                                                <div className="jv-input-group">
+                                                    <SearchableSelect
+                                                        name="residentialStatus"
+                                                        value={formData.residentialStatus}
+                                                        onChange={handleInputChange}
+                                                        placeholder="Select Residential Status"
+                                                        options={['Citizen', 'Permanent Resident', 'Work Permit', 'Student Visa', 'Temporary Visa', 'Other']}
+                                                        className="full"
+                                                    />
+                                                </div>
                                             </div>
-                                        </div>
+                                        ) : null}
 
                                         <div className="jv-form-row">
                                             <label className="jv-label">Highest Degree <span className="jv-asterisk">*</span></label>

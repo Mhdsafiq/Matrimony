@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import { User, Camera, Star, Users, Edit2, Settings, HelpCircle, ChevronDown, Phone, MessageSquare, TrendingUp, Eye } from 'lucide-react';
+import { User, Camera, Star, Users, Edit2, Settings, HelpCircle, ChevronDown, Phone, MessageSquare, TrendingUp, Eye, LogOut } from 'lucide-react';
 import './Home.css';
 
 const Home = () => {
@@ -79,6 +79,9 @@ const Home = () => {
             </div>
             <div className="sidebar-menu-item" onClick={() => navigate('/profile', { state: { openPreferences: true } })}>
               <Settings size={16} /> Edit preferences
+            </div>
+            <div className="sidebar-menu-item" style={{ color: '#e74c3c' }} onClick={() => { localStorage.removeItem('isLoggedIn'); localStorage.removeItem('uniqueId'); localStorage.removeItem('userProfile'); navigate('/'); }}>
+              <LogOut size={16} /> Logout
             </div>
           </div>
 
