@@ -1,0 +1,143 @@
+.interests-page {
+    min-height: 100vh;
+    background: #f8f9fa;
+    display: flex;
+    flex-direction: column;
+}
+
+.interests-container {
+    padding: 2rem;
+    max-width: 1000px;
+    margin: 0 auto;
+    width: 100%;
+    flex: 1;
+}
+
+
+.interests-layout {
+    display: flex;
+    background: transparent;
+    min-height: 600px;
+    gap: 3rem;
+}
+
+/* Sidebar Styles */
+.interests-sidebar {
+    width: 240px;
+    background: #fff;
+    padding: 2rem 1.5rem;
+    border: 1px solid #f0f0f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    height: fit-content;
+    flex-shrink: 0;
+}
+
+.sidebar-group {
+    margin-bottom: 1.5rem;
+}
+
+.sidebar-title {
+    color: #1f2937;
+    font-size: 1rem;
+    margin-bottom: 1.5rem;
+    font-weight: 700;
+}
+
+.sidebar-nav {
+    list-style: none;
+    padding-left: 0;
+}
+
+.sidebar-link {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    padding: 0.6rem 1rem;
+    font-size: 0.9rem;
+    color: #4b5563;
+    cursor: pointer;
+    transition: color 0.2s;
+    font-weight: 500;
+}
+
+.sidebar-link:hover {
+    color: #111827;
+}
+
+.sidebar-link.active {
+    color: #00a650;
+    font-weight: 600;
+}
+
+.sidebar-divider {
+    height: 1px;
+    background: #e5e7eb;
+    margin: 2rem 0;
+}
+
+/* Main Content Styles */
+.interests-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.content-header h2 {
+    font-size: 1.4rem;
+    color: #111827;
+    margin-bottom: 0.3rem;
+    text-transform: none;
+    font-weight: 600;
+}
+
+.content-header p {
+    color: #4b5563;
+    font-size: 0.95rem;
+    margin-bottom: 3rem;
+}
+
+.content-body.empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.illustration-wrapper {
+    margin-bottom: 0.5rem;
+    opacity: 0.9;
+}
+
+.content-body h3 {
+    font-size: 1.1rem;
+    color: #4b5563;
+    margin-bottom: 0.3rem;
+    font-weight: 500;
+}
+
+.content-body p {
+    color: #111827;
+    font-weight: 600;
+    font-size: 1.05rem;
+}
+
+@media (max-width: 768px) {
+    .interests-container {
+        padding: 5rem 1rem 2rem;
+    }
+
+    .interests-layout {
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .interests-sidebar {
+        width: 100%;
+        box-shadow: none;
+        border: 1px solid #e5e7eb;
+    }
+}
