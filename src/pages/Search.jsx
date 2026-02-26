@@ -149,9 +149,9 @@ const Search = () => {
         state: availableStates,
         city: availableCities,
         residentialStatus: ['Citizenship', 'Permanent Resident', 'Work Permit', 'Student Visa', 'Temporary Visa'],
-        smoking: ['Never Smokes', 'Smokes Occasionally'],
-        drinking: ['Never Drinks', 'Drinks Occasionally'],
-        foodHabits: ['Vegetarian', 'Non-Vegetarian', 'Eggetarian']
+        smoking: ['No', 'Occasionally', 'Regularly'],
+        drinking: ['No', 'Occasionally', 'Regularly'],
+        foodHabits: ['Vegetarian', 'Non-Vegetarian', 'Eggetarian', 'Vegan']
     };
 
     const placeholderMap = {

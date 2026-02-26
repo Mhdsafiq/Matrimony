@@ -252,6 +252,8 @@ const PartnerBasicDetailsEditor = ({ initialData, onSave, onClose }) => {
     const showStateCity = (countries.length === 1 && countries[0] === 'India');
     const showResStatus = !showStateCity;
 
+    const showHavingChildren = !form.prefMaritalStatus || form.prefMaritalStatus.trim() !== 'Never Married';
+
     return (
         <div className="pbde-fullscreen">
             <div className="pbde-container">
@@ -345,11 +347,27 @@ const PartnerBasicDetailsEditor = ({ initialData, onSave, onClose }) => {
                         </div>
                     </div>
 
+                    {/* HAVING CHILDREN */}
+                    {showHavingChildren && (
+                        <div className="pbde-field-group pbde-tags-group">
+                            <label>Having Children</label>
+                            <div className="pbde-chips-container">
+                                <button className={`pbde-chip ${isChipSelected('prefHavingChildren', "Doesn't Matter") ? 'selected default-sel' : ''}`} onClick={() => handleChipSelect('prefHavingChildren', "Doesn't Matter")}>
+                                    Doesn't Matter {isChipSelected('prefHavingChildren', "Doesn't Matter") && <Check size={14} />}
+                                </button>
+                                {['Yes', 'No'].map(opt => (
+                                    <button key={opt} className={`pbde-chip ${isChipSelected('prefHavingChildren', opt) ? 'selected' : ''}`} onClick={() => handleChipSelect('prefHavingChildren', opt)}>
+                                        {opt} {isChipSelected('prefHavingChildren', opt) ? <Check size={14} /> : '+'}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     {/* PROFILE POSTED BY */}
-                    <div className="pbde-field-group pbde-tags-group pbde-locked">
+                    <div className="pbde-field-group pbde-tags-group">
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                             <label>Partner's profile posted by</label>
-                            <Lock size={16} color="#9ca3af" />
                         </div>
                         <div className="pbde-chips-container">
                             <button className={`pbde-chip ${isChipSelected('prefProfilePostedBy', "Doesn't Matter") ? 'selected default-sel' : ''}`} onClick={() => handleChipSelect('prefProfilePostedBy', "Doesn't Matter")}>

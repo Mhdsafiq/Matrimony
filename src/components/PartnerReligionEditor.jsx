@@ -78,7 +78,7 @@ const motherTongueData = [
     { category: "East & West", options: ["Bengali", "Marathi", "Gujarati", "Odia", "Urdu"] }
 ];
 
-const horoscopeData = ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"];
+const horoscopeData = ["Mesham (Aries)", "Rishabam (Taurus)", "Mithunam (Gemini)", "Kadagam (Cancer)", "Simmam (Leo)", "Kanni (Virgo)", "Thulam (Libra)", "Viruchigam (Scorpio)", "Dhanusu (Sagittarius)", "Magaram (Capricorn)", "Kumbam (Aquarius)", "Meenam (Pisces)"];
 
 const PartnerReligionEditor = ({ initialData, onSave, onCancel }) => {
     const [form, setForm] = useState({

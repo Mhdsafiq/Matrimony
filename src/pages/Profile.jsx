@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import { User, LogOut, Edit2, X, Save, Camera, Eye, MapPin, Briefcase, GraduationCap, Heart, Calendar, Ruler, Globe2, BadgeCheck, Users, Cigarette, Wine, ChevronRight, MoreVertical, ArrowLeft, Plus, Maximize2, Trash2, Image, Search, Settings, Utensils, Puzzle, Zap, Languages, Music, MessagesSquare, ChefHat, Shirt } from 'lucide-react';
+import { User, LogOut, Edit2, X, Save, Camera, Eye, MapPin, Briefcase, GraduationCap, Heart, Calendar, Ruler, Globe2, BadgeCheck, Users, Cigarette, Wine, ChevronRight, MoreVertical, ArrowLeft, Plus, Maximize2, Trash2, Image, Search, Settings, Utensils, Puzzle, Zap, Languages, Music, MessagesSquare, ChefHat, Shirt, Clock } from 'lucide-react';
 import FavouritesModal from '../components/FavouritesModal';
 import PartnerBasicDetailsEditor from '../components/PartnerBasicDetailsEditor';
 import PartnerEducationEditor from '../components/PartnerEducationEditor';
@@ -225,7 +225,7 @@ const Profile = () => {
     const occupations = ["Software Professional", "Manager", "Engineer", "Doctor", "Teacher", "Banker", "Civil Services", "Business Owner", "Actor/Model", "Other"];
     const currencies = ["INR", "USD", "EUR", "GBP", "AED", "SGD", "MYR", "LKR"];
     const languages = ["Tamil", "English", "Telugu", "Malayalam", "Kannada", "Hindi", "Marathi", "Bengali", "Gujarati", "Urdu", "Punjabi", "Odia"];
-    const horoscopes = ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"];
+    const horoscopes = ["Mesham (Aries)", "Rishabam (Taurus)", "Mithunam (Gemini)", "Kadagam (Cancer)", "Simmam (Leo)", "Kanni (Virgo)", "Thulam (Libra)", "Viruchigam (Scorpio)", "Dhanusu (Sagittarius)", "Magaram (Capricorn)", "Kumbam (Aquarius)", "Meenam (Pisces)"];
 
     useEffect(() => {
         if (localStorage.getItem('isLoggedIn') !== 'true') {
@@ -485,7 +485,7 @@ const Profile = () => {
     const previewDate = getDateFromProfile();
     const previewAge = previewDate ? calculateAge(previewDate.toISOString().slice(0, 10)) : '';
     const previewDobText = previewDate ? formatDate(previewDate.toISOString().slice(0, 10)) : 'Not specified';
-    const previewReligionText = [profileData.religion, profileData.sect, profileData.caste].filter(Boolean).join(' | ') || 'Religion not specified';
+    const previewReligionText = [profileData.religion, profileData.sect, profileData.caste, profileData.horoscope].filter(Boolean).join(' | ') || 'Religion not specified';
     const previewFamilyLocation = [profileData.familyCity, profileData.familyState, profileData.familyCountry].filter(Boolean).join(', ') || profileData.familyLivingIn || 'Not specified';
     const previewFamilyType = profileData.familyType || 'Not specified';
     const previewBrothers = profileData.numberOfBrothers ?? profileData.brothers ?? '';
@@ -670,6 +670,27 @@ const Profile = () => {
                                         <ChevronRight size={18} color="#9ca3af" />
                                     </div>
                                 </div>
+                            )}
+
+                            {/* Hindu Special Fields */}
+                            {editForm.religion === 'Hindu' && (
+                                <>
+                                    <div className="bd-field" style={{ cursor: 'pointer' }} onClick={() => setActiveDropdown({ title: 'Horoscope', field: 'horoscope', options: horoscopes })}>
+                                        <span className="bd-label">Horoscope</span>
+                                        <div className="bd-field-row">
+                                            <span className="bd-value">{editForm.horoscope || 'Select Horoscope'}</span>
+                                            <ChevronRight size={18} color="#9ca3af" />
+                                        </div>
+                                    </div>
+                                    <div className="bd-field">
+                                        <span className="bd-label">Time of Birth</span>
+                                        <input type="time" className="bd-value-input" name="timeOfBirth" value={editForm.timeOfBirth || ''} onChange={handleFormChange} />
+                                    </div>
+                                    <div className="bd-field">
+                                        <span className="bd-label">Place of Birth</span>
+                                        <input type="text" className="bd-value-input" name="placeOfBirth" value={editForm.placeOfBirth || ''} onChange={handleFormChange} placeholder="Enter place of birth" />
+                                    </div>
+                                </>
                             )}
 
                             {/* Mother Tongue */}
@@ -950,22 +971,12 @@ const Profile = () => {
                             </div>
 
                             {/* Occupation */}
-                            <div className="bd-field" style={{ marginTop: '1.5rem' }}>
+                            <div className="bd-field" style={{ cursor: 'pointer', marginTop: '1.5rem' }} onClick={() => setActiveDropdown({ title: 'Occupation', field: 'occupation', options: availableOccupations })}>
                                 <span className="bd-label">Occupation</span>
-                                <input
-                                    type="text"
-                                    list="occupation-list"
-                                    className="bd-value-input"
-                                    name="occupation"
-                                    value={editForm.occupation || ''}
-                                    onChange={handleFormChange}
-                                    placeholder="Select or type occupation"
-                                />
-                                <datalist id="occupation-list">
-                                    {availableOccupations.map(occ => (
-                                        <option key={occ} value={occ}>{occ}</option>
-                                    ))}
-                                </datalist>
+                                <div className="bd-field-row">
+                                    <span className="bd-value">{editForm.occupation || 'Select Occupation'}</span>
+                                    <ChevronRight size={18} color="#9ca3af" />
+                                </div>
                             </div>
 
                             {/* Organization Name */}
@@ -1537,7 +1548,7 @@ const Profile = () => {
                                 </div>
                                 <div className="ep-detail-item">
                                     <Globe2 size={18} className="ep-detail-icon" />
-                                    <span>{profileData.religion}{profileData.sect ? ` • ${profileData.sect}` : ''}{profileData.caste ? ` • ${profileData.caste}` : ''}{!profileData.religion && 'Religion not specified'}</span>
+                                    <span>{[profileData.religion, profileData.sect, profileData.caste, profileData.horoscope].filter(Boolean).join(' • ') || 'Religion not specified'}</span>
                                 </div>
                                 <div className="ep-detail-item">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ep-detail-icon"><circle cx="12" cy="12" r="10" /><path d="M2 12h20" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg>
@@ -1557,7 +1568,12 @@ const Profile = () => {
                                 </div>
                                 <div className="ep-detail-item">
                                     <Heart size={18} className="ep-detail-icon" />
-                                    <span>{profileData.maritalStatus || 'Never Married'}</span>
+                                    <span>
+                                        {profileData.maritalStatus || 'Never Married'}
+                                        {profileData.maritalStatus && profileData.maritalStatus !== 'Never Married' && profileData.havingChildren === 'Yes' && profileData.numberOfChildren && (
+                                            ` • ${profileData.numberOfChildren} Children`
+                                        )}
+                                    </span>
                                 </div>
                             </div>
                             <div className="ep-detail-extra">
@@ -1584,16 +1600,21 @@ const Profile = () => {
                                 </div>
                                 <button className="ep-edit-btn" onClick={() => handleEditSection('about')}><Edit2 size={18} /></button>
                             </div>
-                            {profileData.about ? (
-                                <p className="ep-about-text">{profileData.about}</p>
-                            ) : (
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                                    <p className="ep-about-text" style={{ fontStyle: 'italic', margin: 0 }}>Write something about yourself...</p>
-                                    <button className="ep-empty-add-action" onClick={() => handleEditSection('about')}>
-                                        <Plus size={16} /> Add About Me
-                                    </button>
-                                </div>
-                            )}
+                            <div>
+                                {profileData.about ? (
+                                    <p className="ep-about-text">{profileData.about}</p>
+                                ) : (
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                                        <p className="ep-about-text" style={{ fontStyle: 'italic', margin: 0 }}>Write something about yourself...</p>
+                                        <button className="ep-empty-add-action" onClick={() => handleEditSection('about')}>
+                                            <Plus size={16} /> Add About Me
+                                        </button>
+                                    </div>
+                                )}
+                                {profileData.disability && profileData.disability !== 'None' && (
+                                    <p className="ep-about-text" style={{ marginTop: '12px' }}><strong>Disability:</strong> {profileData.disability}</p>
+                                )}
+                            </div>
                         </div>
 
                         {/* Education */}
@@ -1605,14 +1626,36 @@ const Profile = () => {
                                 </div>
                                 <button className="ep-edit-btn" onClick={() => handleEditSection('education')}><Edit2 size={18} /></button>
                             </div>
-                            {profileData.education ? (
-                                <div className="ep-detail-item" style={{ marginBottom: '12px' }}>
-                                    <div className="ep-icon-circle"><GraduationCap size={20} /></div>
-                                    <div>
-                                        <strong>{profileData.education}</strong>
-                                        <p className="ep-sub-text">Undergraduate Degree</p>
-                                    </div>
-                                </div>
+                            {profileData.education || profileData.ugCollege || profileData.schoolName ? (
+                                <>
+                                    {profileData.education && (
+                                        <div className="ep-detail-item" style={{ marginBottom: '12px' }}>
+                                            <div className="ep-icon-circle"><GraduationCap size={20} /></div>
+                                            <div>
+                                                <strong>{profileData.education}</strong>
+                                                <p className="ep-sub-text">Degree</p>
+                                            </div>
+                                        </div>
+                                    )}
+                                    {profileData.ugCollege && (
+                                        <div className="ep-detail-item" style={{ marginBottom: '12px' }}>
+                                            <div className="ep-icon-circle"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z" /><path d="M6 12v5c3 3 9 3 12 0v-5" /></svg></div>
+                                            <div>
+                                                <strong>{profileData.ugCollege}</strong>
+                                                <p className="ep-sub-text">College</p>
+                                            </div>
+                                        </div>
+                                    )}
+                                    {profileData.schoolName && (
+                                        <div className="ep-detail-item" style={{ marginBottom: '12px' }}>
+                                            <div className="ep-icon-circle"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" /></svg></div>
+                                            <div>
+                                                <strong>{profileData.schoolName}</strong>
+                                                <p className="ep-sub-text">School</p>
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
                             ) : (
                                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
                                     <p className="ep-empty-text" style={{ margin: 0 }}>No education details added yet</p>
@@ -1833,6 +1876,12 @@ const Profile = () => {
                                     <Heart size={18} className="ep-detail-icon" />
                                     <span>{preferenceData.prefMaritalStatus || "Never Married"}</span>
                                 </div>
+                                {(preferenceData.prefMaritalStatus && preferenceData.prefMaritalStatus.trim() !== 'Never Married') && (
+                                    <div className="ep-detail-item">
+                                        <Users size={18} className="ep-detail-icon" />
+                                        <span>Having Children: {preferenceData.prefHavingChildren || "Doesn't Matter"}</span>
+                                    </div>
+                                )}
                                 <div className="ep-detail-item">
                                     <Users size={18} className="ep-detail-icon" />
                                     <span>Profile managed by {profileData.profileFor || "Doesn't Matter"}</span>
@@ -2070,24 +2119,45 @@ const Profile = () => {
                                         <div className="ppv-quick-item"><Globe2 size={18} /><span>{previewReligionText}</span></div>
                                         <div className="ppv-quick-item"><Briefcase size={18} /><span>{profileData.income || 'No Income'}</span></div>
                                         <div className="ppv-quick-item"><Languages size={18} /><span>Mother tongue is {profileData.motherTongue || 'not specified'}</span></div>
-                                        <div className="ppv-quick-item"><Heart size={18} /><span>{profileData.maritalStatus || 'Never Married'}</span></div>
+                                        <div className="ppv-quick-item">
+                                            <Heart size={18} />
+                                            <span>
+                                                {profileData.maritalStatus || 'Never Married'}
+                                                {profileData.maritalStatus && profileData.maritalStatus !== 'Never Married' && profileData.havingChildren === 'Yes' && profileData.numberOfChildren && (
+                                                    ` • ${profileData.numberOfChildren} Children`
+                                                )}
+                                            </span>
+                                        </div>
                                         <div className="ppv-quick-item"><Calendar size={18} /><span>{previewDobText}</span></div>
+                                        {profileData.timeOfBirth && (
+                                            <div className="ppv-quick-item"><Clock size={18} /><span>{profileData.timeOfBirth}</span></div>
+                                        )}
+                                        {profileData.placeOfBirth && (
+                                            <div className="ppv-quick-item"><MapPin size={18} /><span>Born in {profileData.placeOfBirth}</span></div>
+                                        )}
                                     </div>
 
                                     <div className="ppv-card">
                                         <h3>About {pronounObj}</h3>
                                         <p>{profileData.about || 'No description added yet.'}</p>
+                                        {profileData.disability && profileData.disability !== 'None' && (
+                                            <p style={{ marginTop: '8px', fontSize: '0.9rem', color: '#4b5563' }}><strong>Disability:</strong> {profileData.disability}</p>
+                                        )}
                                     </div>
 
                                     <div className="ppv-card">
                                         <h3>{pronounPossCap} Education</h3>
                                         <p>{profileData.education || 'Not specified'}</p>
+                                        {profileData.ugCollege && <p style={{ marginTop: '4px', fontSize: '0.9rem', color: '#4b5563' }}><strong>College:</strong> {profileData.ugCollege}</p>}
+                                        {profileData.schoolName && <p style={{ marginTop: '4px', fontSize: '0.9rem', color: '#4b5563' }}><strong>School:</strong> {profileData.schoolName}</p>}
                                     </div>
 
                                     <div className="ppv-card">
                                         <h3>{pronounPossCap} Career</h3>
-                                        <p>{profileData.occupation || 'Not specified'}</p>
-                                        <span>{profileData.employmentType || 'Employment type not specified'}</span>
+                                        <p><strong>Occupation:</strong> {profileData.occupation || 'Not specified'}</p>
+                                        <p style={{ marginTop: '4px', fontSize: '0.9rem', color: '#4b5563' }}><strong>Employment Type:</strong> {profileData.employmentType || 'Not specified'}</p>
+                                        {profileData.organizationName && <p style={{ marginTop: '4px', fontSize: '0.9rem', color: '#4b5563' }}><strong>Organization:</strong> {profileData.organizationName}</p>}
+                                        {profileData.settlingAbroad && <p style={{ marginTop: '4px', fontSize: '0.9rem', color: '#4b5563' }}><strong>Interested in settling abroad?:</strong> {profileData.settlingAbroad}</p>}
                                     </div>
                                 </>
                             )}
@@ -2109,10 +2179,20 @@ const Profile = () => {
 
                                     <div className="ppv-card">
                                         <h3>{pronounPossCap} Lifestyle and Interests</h3>
-                                        <div className="ppv-row"><span>Hobbies</span><strong>{previewHobbies}</strong></div>
                                         <div className="ppv-row"><span>Diet</span><strong>{previewDiet}</strong></div>
                                         <div className="ppv-row"><span>Drinking</span><strong>{profileData.drinking || 'Not specified'}</strong></div>
                                         <div className="ppv-row"><span>Smoking</span><strong>{profileData.smoking || 'Not specified'}</strong></div>
+                                        {favouritesCategories.map(cat => {
+                                            const vals = favouritesData[cat.key];
+                                            if (vals && vals.length > 0) {
+                                                return <div className="ppv-row" key={cat.key}><span>{cat.label}</span><strong>{vals.join(', ')}</strong></div>;
+                                            }
+                                            // Fallback for Hobbies if missing in favouritesData
+                                            if (cat.key === 'hobbies') {
+                                                return <div className="ppv-row" key={cat.key}><span>Hobbies</span><strong>{profileData.hobbies || 'Not specified'}</strong></div>;
+                                            }
+                                            return null;
+                                        })}
                                     </div>
                                 </>
                             )}
@@ -2129,8 +2209,14 @@ const Profile = () => {
                                         <div className="ppv-row"><span>Height</span><strong>{preferenceData.prefHeightFrom && preferenceData.prefHeightTo ? `${preferenceData.prefHeightFrom} - ${preferenceData.prefHeightTo}` : "Doesn't Matter"}</strong></div>
                                         <div className="ppv-row"><span>Age</span><strong>{preferenceData.prefAgeFrom || '18'} to {preferenceData.prefAgeTo || '30'} Years</strong></div>
                                         <div className="ppv-row"><span>Marital Status</span><strong>{preferenceData.prefMaritalStatus || "Doesn't Matter"}</strong></div>
+                                        {(preferenceData.prefMaritalStatus && preferenceData.prefMaritalStatus.trim() !== 'Never Married') && (
+                                            <div className="ppv-row"><span>Having Children</span><strong>{preferenceData.prefHavingChildren || "Doesn't Matter"}</strong></div>
+                                        )}
                                         <div className="ppv-row"><span>Religion</span><strong>{preferenceData.prefReligion || "Doesn't Matter"}</strong></div>
                                         <div className="ppv-row"><span>Mother Tongue</span><strong>{preferenceData.prefMotherTongue || "Doesn't Matter"}</strong></div>
+                                        {preferenceData.prefReligion?.trim() === 'Hindu' && (
+                                            <div className="ppv-row"><span>Horoscope</span><strong>{preferenceData.prefHoroscope || "Doesn't Matter"}</strong></div>
+                                        )}
                                         <div className="ppv-row"><span>Country</span><strong>{previewCountryPreference}</strong></div>
                                         <div className="ppv-row"><span>State</span><strong>{preferenceData.prefState || "Doesn't Matter"}</strong></div>
                                         <div className="ppv-row"><span>City</span><strong>{preferenceData.prefCity || "Doesn't Matter"}</strong></div>
@@ -2142,6 +2228,21 @@ const Profile = () => {
                                         <div className="ppv-row"><span>Occupation</span><strong>{previewOccupationPreference}</strong></div>
                                         <div className="ppv-row"><span>Employment Type</span><strong>{previewEmploymentPreference}</strong></div>
                                         <div className="ppv-row"><span>Earning</span><strong>{previewIncomePreference}</strong></div>
+                                    </div>
+
+                                    <div className="ppv-card">
+                                        <h3>Partner's Family Details</h3>
+                                        <div className="ppv-row"><span>Family Status</span><strong>{preferenceData.prefFamilyStatus || "Doesn't Matter"}</strong></div>
+                                        <div className="ppv-row"><span>Family Type</span><strong>{preferenceData.prefFamilyType || "Doesn't Matter"}</strong></div>
+                                        <div className="ppv-row"><span>Living with Parents</span><strong>{preferenceData.prefLivingWithParents || "Doesn't Matter"}</strong></div>
+                                    </div>
+
+                                    <div className="ppv-card">
+                                        <h3>Partner's Lifestyle and Appearance</h3>
+                                        <div className="ppv-row"><span>Drinking Habits</span><strong>{preferenceData.prefDrinking || "Doesn't Matter"}</strong></div>
+                                        <div className="ppv-row"><span>Dietary Habits</span><strong>{preferenceData.prefDietary || "Doesn't Matter"}</strong></div>
+                                        <div className="ppv-row"><span>Smoking Habits</span><strong>{preferenceData.prefSmoking || "Doesn't Matter"}</strong></div>
+                                        <div className="ppv-row"><span>Special Cases</span><strong>{preferenceData.prefPhysicalStatus || "Doesn't Matter"}</strong></div>
                                     </div>
                                 </>
                             )}

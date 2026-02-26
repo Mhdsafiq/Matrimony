@@ -1,53 +1,51 @@
 .interests-page {
     min-height: 100vh;
-    background: var(--bg-gradient);
+    background: #f8f9fa;
     display: flex;
     flex-direction: column;
 }
 
 .interests-container {
-    padding: 6rem 2rem 4rem;
-    max-width: 1200px;
+    padding: 2rem;
+    max-width: 1000px;
     margin: 0 auto;
     width: 100%;
     flex: 1;
 }
 
+
 .interests-layout {
     display: flex;
-    background: white;
-    border-radius: var(--radius);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
+    background: transparent;
     min-height: 600px;
+    gap: 3rem;
 }
 
 /* Sidebar Styles */
 .interests-sidebar {
-    width: 280px;
-    background: #fdf2d0;
-    padding: 2rem;
-    border-right: 1px solid #e5e7eb;
+    width: 240px;
+    background: #fff;
+    padding: 2rem 1.5rem;
+    border: 1px solid #f0f0f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    height: fit-content;
+    flex-shrink: 0;
 }
 
 .sidebar-group {
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
 }
 
 .sidebar-title {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: var(--secondary);
-    font-size: 1.1rem;
-    cursor: pointer;
-    margin-bottom: 1rem;
-    font-weight: 600;
+    color: #1f2937;
+    font-size: 1rem;
+    margin-bottom: 1.5rem;
+    font-weight: 700;
 }
 
 .sidebar-nav {
     list-style: none;
-    padding-left: 1.8rem;
+    padding-left: 0;
 }
 
 .sidebar-link {
@@ -56,43 +54,47 @@
     text-align: left;
     background: none;
     border: none;
-    padding: 0.5rem 0;
-    font-size: 0.95rem;
-    color: var(--text-main);
+    padding: 0.6rem 1rem;
+    font-size: 0.9rem;
+    color: #4b5563;
     cursor: pointer;
     transition: color 0.2s;
+    font-weight: 500;
 }
 
-.sidebar-link:hover,
+.sidebar-link:hover {
+    color: #111827;
+}
+
 .sidebar-link.active {
-    color: var(--primary);
+    color: #00a650;
     font-weight: 600;
 }
 
 .sidebar-divider {
     height: 1px;
     background: #e5e7eb;
-    margin: 1.5rem 0;
+    margin: 2rem 0;
 }
 
 /* Main Content Styles */
 .interests-content {
     flex: 1;
-    padding: 3rem;
     display: flex;
     flex-direction: column;
 }
 
 .content-header h2 {
-    font-size: 1.8rem;
-    color: var(--secondary);
-    margin-bottom: 0.5rem;
-    text-transform: capitalize;
+    font-size: 1.4rem;
+    color: #111827;
+    margin-bottom: 0.3rem;
+    text-transform: none;
+    font-weight: 600;
 }
 
 .content-header p {
-    color: var(--text-light);
-    font-size: 1rem;
+    color: #4b5563;
+    font-size: 0.95rem;
     margin-bottom: 3rem;
 }
 
@@ -103,50 +105,39 @@
     align-items: center;
     justify-content: center;
     text-align: center;
-    opacity: 0.8;
 }
 
-.illustration-container {
-    background: #f3f4f6;
-    border-radius: 50%;
-    width: 120px;
-    height: 120px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 1.5rem;
-}
-
-.empty-icon {
-    color: var(--text-light);
+.illustration-wrapper {
+    margin-bottom: 0.5rem;
+    opacity: 0.9;
 }
 
 .content-body h3 {
-    font-size: 1.4rem;
-    color: var(--secondary);
-    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+    color: #4b5563;
+    margin-bottom: 0.3rem;
+    font-weight: 500;
 }
 
 .content-body p {
-    color: var(--text-light);
+    color: #111827;
+    font-weight: 600;
+    font-size: 1.05rem;
 }
 
 @media (max-width: 768px) {
     .interests-container {
-        padding: 6rem 1rem 2rem;
+        padding: 5rem 1rem 2rem;
     }
 
     .interests-layout {
         flex-direction: column;
+        gap: 2rem;
     }
 
     .interests-sidebar {
         width: 100%;
-        border-right: none;
-        border-bottom: 1px solid #e5e7eb;
-    }
-
-    .interests-content {
-        padding: 2rem 1.5rem;
+        box-shadow: none;
+        border: 1px solid #e5e7eb;
     }
 }
