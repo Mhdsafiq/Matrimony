@@ -498,7 +498,7 @@
     min-height: 500px;
     background-image: url('/couple_hero.jpg');
     background-size: cover;
-    background-position: center 25%;
+    background-position: right center;
     background-repeat: no-repeat;
     display: flex;
     flex-direction: column;
