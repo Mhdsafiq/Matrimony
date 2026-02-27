@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import {
-    Users, Star, Eye, UserPlus, MapPin, Sparkles, ChevronRight, User
+    Users, Star, Eye, UserPlus, ChevronRight, User, Contact, UserSearch, Search,
+    MapPin, Image, Sparkles
 } from 'lucide-react';
 import './Matches.css';
 
@@ -17,7 +18,16 @@ const Matches = () => {
         {
             title: "All Matches",
             items: [
-                { id: 'your-matches', label: 'Your Matches', desc: 'View all the profiles that match your preferences', icon: <Users size={20} /> }
+                { id: 'your-matches', label: 'Your Matches', desc: 'View all the profiles that match your preferences', icon: <Contact size={20} /> }
+            ]
+        },
+        {
+            title: "Based on activity",
+            items: [
+                { id: 'shortlisted-by-you', label: 'Shortlisted by you', desc: 'Matches you have shortlisted', icon: <Star size={20} fill="currentColor" /> },
+                { id: 'viewed-you', label: 'Viewed you', desc: 'Matches who have viewed your profile', icon: <Eye size={20} /> },
+                { id: 'shortlisted-you', label: 'Shortlisted you', desc: 'Matches who have shortlisted your profile', icon: <UserPlus size={20} /> },
+                { id: 'viewed-by-you', label: 'Viewed by you', desc: 'Matches you have viewed', icon: <UserSearch size={20} /> }
             ]
         },
         {
@@ -29,16 +39,8 @@ const Matches = () => {
         {
             title: "Based on profile details",
             items: [
+                { id: 'matches-with-photos', label: 'Matches with photos', desc: 'Matches that have added photos', icon: <Image size={20} /> },
                 { id: 'matches-with-horoscope', label: 'Matches with horoscope', desc: 'Matches that have added horoscope', icon: <Sparkles size={20} /> }
-            ]
-        },
-        {
-            title: "Based on activity",
-            items: [
-                { id: 'shortlisted-by-you', label: 'Shortlisted by you', desc: 'Matches you have shortlisted', icon: <Star size={20} /> },
-                { id: 'viewed-you', label: 'Viewed you', desc: 'Matches who have viewed your profile', icon: <Eye size={20} /> },
-                { id: 'shortlisted-you', label: 'Shortlisted you', desc: 'Matches who have shortlisted your profile', icon: <UserPlus size={20} /> },
-                { id: 'viewed-by-you', label: 'Viewed by you', desc: 'Matches you have viewed', icon: <Eye size={20} /> }
             ]
         }
     ];
@@ -154,35 +156,36 @@ const Matches = () => {
                                         </li>
                                     ))}
                                 </ul>
-                                {groupIndex < matchGroups.length - 1 && <div className="group-divider"></div>}
                             </div>
                         ))}
                     </aside>
 
                     {/* Main Content */}
                     <main className="matches-content">
-                        <div className="content-header">
-                            <h2>{activeItem.label}</h2>
-                            <p>{activeItem.desc}</p>
-                        </div>
+                        {!showEmpty && (
+                            <div className="content-header">
+                                <h2>{activeItem.label}</h2>
+                                <p>{activeItem.desc}</p>
+                            </div>
+                        )}
 
                         <div className={`matches-body ${showEmpty ? 'empty-state' : ''}`}>
                             {showViewedYou && renderProfileList(viewedYouList, 'viewed-you')}
                             {showViewedByYou && renderProfileList(viewedByYouList, 'viewed-by-you')}
 
                             {showEmpty && (
-                                <>
-                                    <div className="illustration-container">
-                                        <Users size={64} className="empty-icon" />
+                                <div className="empty-state-wrapper">
+                                    <div className="empty-illustration">
+                                        <Users size={120} color="#cbd5e1" strokeWidth={1.5} fill="#e2e8f0" />
                                         <div className="search-overlay">
-                                            <div className="magnifier"></div>
+                                            <Search size={40} color="#1e293b" strokeWidth={2.5} />
                                         </div>
                                     </div>
-                                    <h3>{emptyTitle}</h3>
+                                    <h3 className="empty-title">{emptyTitle}</h3>
                                     {activeCategory === 'your-matches' && (
-                                        <button className="btn btn-outline change-pref-btn" onClick={() => navigate('/profile', { state: { openPreferences: true } })}>Change Preferences</button>
+                                        <button className="change-pref-btn" onClick={() => navigate('/profile', { state: { openPreferences: true } })}>Change Preferences</button>
                                     )}
-                                </>
+                                </div>
                             )}
                             {activeCategory === 'viewed-you' && viewedYouList.length === 0 && (
                                 <p className="viewed-empty-note">Search and open profiles from another account to see activity here.</p>

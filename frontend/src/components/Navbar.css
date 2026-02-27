@@ -12,9 +12,11 @@
     overflow: visible;
 }
 
-/* Scrolled state is now the default, keeping class for potential future variations but empty for now */
+/* Scrolled state: reduced opacity white background */
 .navbar.scrolled {
-    background: rgba(255, 255, 255, 0.95);
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(18px);
+    box-shadow: 0 1px 12px rgba(0, 0, 0, 0.06);
 }
 
 .nav-container {

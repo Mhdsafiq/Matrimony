@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import './Interests.css';
 
 const Interests = () => {
+    const navigate = useNavigate();
     const [activeSection, setActiveSection] = useState('received'); // 'received' or 'sent'
     const [activeFilter, setActiveFilter] = useState('all'); // 'all', 'pending', 'accepted', 'declined'
 
@@ -14,19 +16,62 @@ const Interests = () => {
         { id: 'declined', label: 'Declined' }
     ];
 
+    // Dynamic title based on section + filter
     const getTitle = () => {
-        const section = activeSection === 'received' ? 'interests received' : 'interests sent';
-        const filter = activeFilter === 'all' ? 'All' :
-            activeFilter === 'pending' ? 'Pending' :
-                activeFilter === 'accepted' ? 'Accepted' : 'Declined';
-        return `${filter} ${section}`;
+        if (activeSection === 'received') {
+            if (activeFilter === 'all') return 'All interests received';
+            if (activeFilter === 'pending') return 'Pending interests';
+            if (activeFilter === 'accepted') return 'Matches who accepted/replied to your interest';
+            if (activeFilter === 'declined') return 'Declined interests';
+        } else {
+            if (activeFilter === 'all') return 'Interests sent by you';
+            if (activeFilter === 'pending') return 'Matches yet to respond';
+            if (activeFilter === 'accepted') return 'Matches who accepted/replied to your interest';
+            if (activeFilter === 'declined') return 'Declined interests sent';
+        }
+        return 'Interests';
     };
 
+    // Dynamic subtitle based on section + filter
     const getSubtitle = () => {
-        return activeSection === 'received'
-            ? "Interests and responses from free members"
-            : "Interests and responses you have sent";
+        if (activeSection === 'received') {
+            if (activeFilter === 'all') return 'Interests and responses from free members';
+            if (activeFilter === 'pending') return 'Interests from free members awaiting your response';
+            if (activeFilter === 'accepted') return '';
+            if (activeFilter === 'declined') return '';
+        } else {
+            return '';
+        }
+        return '';
     };
+
+    // Dynamic empty state message based on section + filter
+    const getEmptyMessage = () => {
+        if (activeSection === 'received') {
+            if (activeFilter === 'all') return 'No conversation till now';
+            if (activeFilter === 'pending') return 'You have no pending interests/messages.';
+            if (activeFilter === 'accepted') return 'You have no accepted interests or replies yet.';
+            if (activeFilter === 'declined') return 'You have no declined interests yet.';
+        } else {
+            if (activeFilter === 'all') return 'You have not sent any interests yet';
+            if (activeFilter === 'pending') return 'You have no pending interests';
+            if (activeFilter === 'accepted') return 'You have no interests that were accepted/responded to';
+            if (activeFilter === 'declined') return 'You have no declined interests yet';
+        }
+        return 'No interests found';
+    };
+
+    const getEmptySubMessage = () => {
+        if (activeSection === 'received' && activeFilter === 'all') {
+            return 'All incoming interests and responses will be shown here';
+        }
+        return '';
+    };
+
+    // Show "Explore matches" button only for sent section
+    const showExploreBtn = activeSection === 'sent';
+
+    const subtitle = getSubtitle();
 
     return (
         <div className="interests-page">
@@ -75,35 +120,26 @@ const Interests = () => {
                     <main className="interests-content">
                         <div className="content-header">
                             <h2>{getTitle()}</h2>
-                            <p>{getSubtitle()}</p>
+                            {subtitle && <p className="content-subtitle">{subtitle}</p>}
                         </div>
 
                         <div className="content-body empty-state">
                             <div className="illustration-wrapper">
-                                <svg width="240" height="200" viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <rect x="150" y="50" width="80" height="150" rx="10" fill="#f0f0f0" stroke="#1f2937" strokeWidth="3" />
-                                    <line x1="160" y1="70" x2="220" y2="70" stroke="#d1d5db" strokeWidth="4" strokeLinecap="round" />
-                                    <line x1="160" y1="90" x2="220" y2="90" stroke="#d1d5db" strokeWidth="4" strokeLinecap="round" />
-                                    <line x1="160" y1="110" x2="200" y2="110" stroke="#d1d5db" strokeWidth="4" strokeLinecap="round" />
-                                    <circle cx="190" cy="180" r="10" fill="#e5e7eb" />
-                                    {/* Person 1 (Standing) */}
-                                    <path d="M140 130 C150 120, 160 120, 150 160 C140 200, 130 200, 140 200 L160 200 C155 170, 165 140, 160 130 Z" fill="#1f2937" />
-                                    <path d="M140 90 C155 90, 160 110, 150 130 L130 130 C120 110, 125 90, 140 90 Z" fill="#22c55e" />
-                                    <circle cx="145" cy="80" r="12" fill="#fbcfe8" />
-                                    <path d="M145 95 L165 110" stroke="#fbcfe8" strokeWidth="5" strokeLinecap="round" />
-
-                                    {/* Person 2 (Sitting) */}
-                                    <path d="M220 170 C210 160, 200 170, 210 190 C220 200, 270 210, 270 200 L260 190 C230 190, 220 180, 230 170 Z" fill="#1f2937" />
-                                    <path d="M230 135 C220 135, 215 155, 225 170 L245 170 C255 155, 250 135, 230 135 Z" fill="#1f2937" />
-                                    <circle cx="225" cy="125" r="12" fill="#fbcfe8" />
-                                    <path d="M225 140 L210 155" stroke="#fbcfe8" strokeWidth="5" strokeLinecap="round" />
-
-                                    {/* Shadows/ground */}
-                                    <ellipse cx="200" cy="205" rx="80" ry="5" fill="#e5e7eb" />
-                                </svg>
+                                <img
+                                    src="/interests_illustration.png"
+                                    alt="No interests illustration"
+                                    className="interests-illustration-img"
+                                />
                             </div>
-                            <h3>No conversation till now</h3>
-                            <p>All incoming interests and responses will be shown here</p>
+                            <h3 className="empty-message">{getEmptyMessage()}</h3>
+                            {getEmptySubMessage() && (
+                                <p className="empty-sub-message">{getEmptySubMessage()}</p>
+                            )}
+                            {showExploreBtn && (
+                                <button className="explore-btn" onClick={() => navigate('/matches')}>
+                                    Explore matches
+                                </button>
+                            )}
                         </div>
                     </main>
                 </div>

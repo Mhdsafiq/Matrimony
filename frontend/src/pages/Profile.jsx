@@ -10,6 +10,8 @@ import PartnerFamilyEditor from '../components/PartnerFamilyEditor';
 import PartnerLifestyleEditor from '../components/PartnerLifestyleEditor';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { createPortal } from 'react-dom';
+import axios from 'axios';
+import API_BASE_URL from '../config';
 import './Profile.css';
 import { getCountries, getStates, getCities, getCastes, getSects } from '../data/locationData';
 
@@ -110,9 +112,23 @@ const Profile = () => {
         setFavouritesData(prev => {
             const updated = { ...prev, [key]: selectedItems };
             localStorage.setItem('userFavourites', JSON.stringify(updated));
+
+            // Sync with main userProfile to ensure persistence on refresh
+            const savedProfile = localStorage.getItem('userProfile');
+            if (savedProfile) {
+                const parsed = JSON.parse(savedProfile);
+                parsed[key] = selectedItems;
+                localStorage.setItem('userProfile', JSON.stringify(parsed));
+            }
+
             return updated;
         });
         setActiveFavModal(null);
+
+        // Auto-Sync: Immediately trigger backend update
+        setTimeout(() => {
+            handleUpdateProfile();
+        }, 100);
     };
     const [incomeSearchTerm, setIncomeSearchTerm] = useState('');
 
@@ -137,9 +153,33 @@ const Profile = () => {
         if (location.state?.openPreferences) {
             setActiveTab('looking');
         }
+        if (location.state?.openPhotos) {
+            setShowPhotoManager(true);
+        }
+        if (location.state?.openSection) {
+            // Need to wait for profile data to load first
+            const timer = setTimeout(() => {
+                const section = location.state.openSection;
+                setEditForm(prev => {
+                    const savedProfile = localStorage.getItem('userProfile');
+                    if (savedProfile) {
+                        try {
+                            return { ...JSON.parse(savedProfile) };
+                        } catch (e) { }
+                    }
+                    return prev;
+                });
+                setEditingSection(section);
+            }, 100);
+            return () => clearTimeout(timer);
+        }
     }, [location]);
 
-    const uniqueId = localStorage.getItem('uniqueId') || 'MEM-12345';
+    // Initialize data from localStorage with fallbacks
+    const savedUserStr = localStorage.getItem('userProfile');
+    const savedUser = savedUserStr ? JSON.parse(savedUserStr) : {};
+    const uniqueId = savedUser.uniqueId || 'SM-000000';
+    const userType = savedUser.userType || 'Normal';
 
     const [profileData, setProfileData] = useState({
         uniqueId: uniqueId,
@@ -195,8 +235,8 @@ const Profile = () => {
     });
 
     const [preferenceData, setPreferenceData] = useState({
-        prefAgeFrom: '18',
-        prefAgeTo: '30',
+        prefAgeFrom: '',
+        prefAgeTo: '',
         prefHeightFrom: '',
         prefHeightTo: '',
         prefReligion: '',
@@ -228,34 +268,82 @@ const Profile = () => {
     const horoscopes = ["Mesham (Aries)", "Rishabam (Taurus)", "Mithunam (Gemini)", "Kadagam (Cancer)", "Simmam (Leo)", "Kanni (Virgo)", "Thulam (Libra)", "Viruchigam (Scorpio)", "Dhanusu (Sagittarius)", "Magaram (Capricorn)", "Kumbam (Aquarius)", "Meenam (Pisces)"];
 
     useEffect(() => {
-        if (localStorage.getItem('isLoggedIn') !== 'true') {
-            window.location.href = '/';
-        } else {
+        const fetchUserProfile = async () => {
+            if (localStorage.getItem('isLoggedIn') !== 'true') {
+                window.location.href = '/';
+                return;
+            }
+
             const savedProfile = localStorage.getItem('userProfile');
             if (savedProfile) {
                 try {
                     const parsedProfile = JSON.parse(savedProfile);
-                    setProfileData(prev => ({ ...prev, ...parsedProfile }));
+                    // Use uniqueId, email or mobile as identifier
+                    const identifier = parsedProfile.uniqueId || parsedProfile.email || parsedProfile.mobile;
+
+                    if (identifier) {
+                        const response = await axios.get(`${API_BASE_URL}/api/users/profile/${identifier}`);
+                        if (response.status === 200) {
+                            const dbProfile = response.data;
+                            setProfileData(prev => ({ ...prev, ...dbProfile, fullName: dbProfile.name || dbProfile.fullName }));
+                            setPreferenceData(prev => ({ ...prev, ...dbProfile }));
+                            setFavouritesData(prev => ({ ...prev, ...dbProfile }));
+                            localStorage.setItem('userProfile', JSON.stringify(dbProfile));
+                        }
+                    } else {
+                        // Fallback to local storage if no identifier found
+                        setProfileData(prev => ({ ...prev, ...parsedProfile, fullName: parsedProfile.name || parsedProfile.fullName }));
+                        setPreferenceData(prev => ({ ...prev, ...parsedProfile }));
+                        setFavouritesData(prev => ({ ...prev, ...parsedProfile }));
+                    }
                 } catch (e) {
-                    console.error("Error parsing user profile", e);
-                }
-                const savedPrefs = localStorage.getItem('userPreferences');
-                if (savedPrefs) {
-                    try { setPreferenceData(prev => ({ ...prev, ...JSON.parse(savedPrefs) })); } catch (e) { }
-                }
-                const savedFavs = localStorage.getItem('userFavourites');
-                if (savedFavs) {
-                    try { setFavouritesData(prev => ({ ...prev, ...JSON.parse(savedFavs) })); } catch (e) { }
+                    console.error("Error fetching user profile:", e);
+                    // Fallback to local storage on error
+                    if (savedProfile) {
+                        const parsedProfile = JSON.parse(savedProfile);
+                        setProfileData(prev => ({ ...prev, ...parsedProfile, fullName: parsedProfile.name || parsedProfile.fullName }));
+                        setPreferenceData(prev => ({ ...prev, ...parsedProfile }));
+                        setFavouritesData(prev => ({ ...prev, ...parsedProfile }));
+                    }
                 }
             }
-        }
+        };
+
+        fetchUserProfile();
     }, []);
 
     const handleLogout = () => {
         localStorage.removeItem('isLoggedIn');
         localStorage.removeItem('uniqueId');
         localStorage.removeItem('userProfile');
+        localStorage.removeItem('userPreferences');
+        localStorage.removeItem('userFavourites');
         navigate('/');
+    };
+
+    const handleUpdateProfile = async () => {
+        try {
+            // Send the entire profile object dynamically
+            const payload = {
+                ...profileData,
+                ...preferenceData,
+                ...favouritesData,
+                name: profileData.fullName,
+                userType: userType, // Crucial for backend selection
+                uniqueId: profileData.uniqueId // Ensure ID is present
+            };
+
+            const response = await axios.put(`${API_BASE_URL}/api/users/update`, payload);
+
+            if (response.status === 200) {
+                // Save the database-confirmed user object back to localStorage
+                localStorage.setItem('userProfile', JSON.stringify(response.data.user));
+                alert('Profile updated successfully!');
+            }
+        } catch (error) {
+            console.error('Error updating profile:', error);
+            alert(error.response?.data?.message || 'Failed to update profile.');
+        }
     };
 
     const handleEditSection = (section) => {
@@ -391,9 +479,23 @@ const Profile = () => {
         setEmailError('');
         setMobileError('');
         setAgeError('');
-        setProfileData(editForm);
-        localStorage.setItem('userProfile', JSON.stringify(editForm));
+
+        // Update all related states to keep them in sync
+        setProfileData(prev => ({ ...prev, ...editForm }));
+        setPreferenceData(prev => ({ ...prev, ...editForm }));
+        setFavouritesData(prev => ({ ...prev, ...editForm }));
+
+        // Update local storage
+        const currentProfile = JSON.parse(localStorage.getItem('userProfile') || '{}');
+        const updatedProfile = { ...currentProfile, ...editForm };
+        localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
+
         setEditingSection(null);
+
+        // Auto-Sync: Immediately trigger backend update
+        setTimeout(() => {
+            handleUpdateProfile();
+        }, 100);
     };
 
     const handleEditPreferenceClick = () => {
@@ -415,9 +517,24 @@ const Profile = () => {
     };
 
     const handlePrefSave = () => {
-        setPreferenceData(prefForm);
+        // Update all related states to keep them in sync
+        setPreferenceData(prev => ({ ...prev, ...prefForm }));
+        setProfileData(prev => ({ ...prev, ...prefForm }));
+        setFavouritesData(prev => ({ ...prev, ...prefForm }));
+
+        // Seed unified userProfile in localStorage
+        const savedProfile = localStorage.getItem('userProfile');
+        const currentProfile = savedProfile ? JSON.parse(savedProfile) : {};
+        const updatedProfile = { ...currentProfile, ...prefForm };
+        localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
+
         localStorage.setItem('userPreferences', JSON.stringify(prefForm));
         setActivePrefEditor(null);
+
+        // Auto-Sync: Immediately trigger backend update
+        setTimeout(() => {
+            handleUpdateProfile();
+        }, 100);
     };
 
     const calculateCompletion = () => {
@@ -512,8 +629,7 @@ const Profile = () => {
             event.preventDefault();
             event.stopPropagation();
         }
-        setPreviewTab('about');
-        setShowProfilePreview(true);
+        navigate('/profile-view');
     };
 
     // Section edit modal renderer
@@ -551,14 +667,6 @@ const Profile = () => {
                                 <input type="text" className="bd-value-input" name="fullName" value={editForm.fullName || ''} onChange={handleFormChange} />
                             </div>
 
-                            <label className="bd-checkbox">
-                                <input type="checkbox" defaultChecked />
-                                <span className="bd-checkbox-mark"></span>
-                                <div>
-                                    <span className="bd-checkbox-text">Show my name to all</span>
-                                    <p className="bd-checkbox-note">If you uncheck, you won't be able to see the name of other members</p>
-                                </div>
-                            </label>
 
                             {/* Gender */}
                             <div className="bd-field" style={{ cursor: 'pointer' }} onClick={() => setActiveDropdown({ title: 'Gender', field: 'gender', options: ['Male', 'Female'] })}>
@@ -583,7 +691,7 @@ const Profile = () => {
                                         }}
                                         style={{ border: '1px solid #e5e7eb', borderRadius: '4px', padding: '8px', outline: 'none', color: '#1a2a3a', fontFamily: 'inherit' }}
                                     />
-                                    {ageError && <span style={{ color: '#e74c3c', fontSize: '0.8rem', marginTop: '5px' }}>{ageError}</span>}
+                                    {ageError && <span style={{ color: '#D4AF37', fontSize: '0.8rem', marginTop: '5px' }}>{ageError}</span>}
                                 </div>
                             </div>
 
@@ -1058,7 +1166,7 @@ const Profile = () => {
                                             key={opt}
                                             className={`bd-chip ${editForm.familyStatus === opt ? 'active' : ''}`}
                                             onClick={() => setEditForm(prev => ({ ...prev, familyStatus: opt }))}
-                                            style={{ backgroundColor: editForm.familyStatus === opt ? '#fff0f3' : '#fff', color: editForm.familyStatus === opt ? '#1a2a3a' : '#64748b', borderColor: editForm.familyStatus === opt ? '#ff4b72' : '#e2e8f0', borderRadius: '30px', padding: '10px 20px', fontSize: '0.95rem' }}
+                                            style={{ backgroundColor: editForm.familyStatus === opt ? '#fdf8e8' : '#fff', color: editForm.familyStatus === opt ? '#1a2a3a' : '#64748b', borderColor: editForm.familyStatus === opt ? '#D4AF37' : '#e2e8f0', borderRadius: '30px', padding: '10px 20px', fontSize: '0.95rem' }}
                                         >
                                             {opt}
                                         </button>
@@ -1075,7 +1183,7 @@ const Profile = () => {
                                             key={opt}
                                             className={`bd-chip ${editForm.familyType === opt ? 'active' : ''}`}
                                             onClick={() => setEditForm(prev => ({ ...prev, familyType: opt }))}
-                                            style={{ backgroundColor: editForm.familyType === opt ? '#fff0f3' : '#fff', color: editForm.familyType === opt ? '#1a2a3a' : '#64748b', borderColor: editForm.familyType === opt ? '#ff4b72' : '#e2e8f0', borderRadius: '30px', padding: '10px 20px', fontSize: '0.95rem' }}
+                                            style={{ backgroundColor: editForm.familyType === opt ? '#fdf8e8' : '#fff', color: editForm.familyType === opt ? '#1a2a3a' : '#64748b', borderColor: editForm.familyType === opt ? '#D4AF37' : '#e2e8f0', borderRadius: '30px', padding: '10px 20px', fontSize: '0.95rem' }}
                                         >
                                             {opt}
                                         </button>
@@ -1092,7 +1200,7 @@ const Profile = () => {
                                             key={opt}
                                             className={`bd-chip ${editForm.livingWithParents === opt ? 'active' : ''}`}
                                             onClick={() => setEditForm(prev => ({ ...prev, livingWithParents: opt }))}
-                                            style={{ backgroundColor: editForm.livingWithParents === opt ? '#fff0f3' : '#fff', color: editForm.livingWithParents === opt ? '#1a2a3a' : '#64748b', borderColor: editForm.livingWithParents === opt ? '#ff4b72' : '#e2e8f0', borderRadius: '30px', padding: '10px 20px', fontSize: '0.95rem' }}
+                                            style={{ backgroundColor: editForm.livingWithParents === opt ? '#fdf8e8' : '#fff', color: editForm.livingWithParents === opt ? '#1a2a3a' : '#64748b', borderColor: editForm.livingWithParents === opt ? '#D4AF37' : '#e2e8f0', borderRadius: '30px', padding: '10px 20px', fontSize: '0.95rem' }}
                                         >
                                             {opt}
                                         </button>
@@ -1140,7 +1248,7 @@ const Profile = () => {
                                                 if (opt === "0") newForm.marriedBrothers = "";
                                                 return newForm;
                                             })}
-                                            style={{ backgroundColor: editForm.numberOfBrothers === opt ? '#fff0f3' : '#fff', color: editForm.numberOfBrothers === opt ? '#1a2a3a' : '#64748b', borderColor: editForm.numberOfBrothers === opt ? '#ff4b72' : '#e2e8f0', borderRadius: '50%', width: '45px', height: '45px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0', fontSize: '0.95rem' }}
+                                            style={{ backgroundColor: editForm.numberOfBrothers === opt ? '#fdf8e8' : '#fff', color: editForm.numberOfBrothers === opt ? '#1a2a3a' : '#64748b', borderColor: editForm.numberOfBrothers === opt ? '#D4AF37' : '#e2e8f0', borderRadius: '50%', width: '45px', height: '45px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0', fontSize: '0.95rem' }}
                                         >
                                             {opt}
                                         </button>
@@ -1158,7 +1266,7 @@ const Profile = () => {
                                                 key={opt}
                                                 className={`bd-chip ${editForm.marriedBrothers === opt ? 'active' : ''}`}
                                                 onClick={() => setEditForm(prev => ({ ...prev, marriedBrothers: opt }))}
-                                                style={{ backgroundColor: editForm.marriedBrothers === opt ? '#fff0f3' : '#fff', color: editForm.marriedBrothers === opt ? '#1a2a3a' : '#64748b', borderColor: editForm.marriedBrothers === opt ? '#ff4b72' : '#e2e8f0', borderRadius: '50%', width: '45px', height: '45px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0', fontSize: '0.95rem' }}
+                                                style={{ backgroundColor: editForm.marriedBrothers === opt ? '#fdf8e8' : '#fff', color: editForm.marriedBrothers === opt ? '#1a2a3a' : '#64748b', borderColor: editForm.marriedBrothers === opt ? '#D4AF37' : '#e2e8f0', borderRadius: '50%', width: '45px', height: '45px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0', fontSize: '0.95rem' }}
                                             >
                                                 {opt}
                                             </button>
@@ -1180,7 +1288,7 @@ const Profile = () => {
                                                 if (opt === "0") newForm.marriedSisters = "";
                                                 return newForm;
                                             })}
-                                            style={{ backgroundColor: editForm.numberOfSisters === opt ? '#fff0f3' : '#fff', color: editForm.numberOfSisters === opt ? '#1a2a3a' : '#64748b', borderColor: editForm.numberOfSisters === opt ? '#ff4b72' : '#e2e8f0', borderRadius: '50%', width: '45px', height: '45px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0', fontSize: '0.95rem' }}
+                                            style={{ backgroundColor: editForm.numberOfSisters === opt ? '#fdf8e8' : '#fff', color: editForm.numberOfSisters === opt ? '#1a2a3a' : '#64748b', borderColor: editForm.numberOfSisters === opt ? '#D4AF37' : '#e2e8f0', borderRadius: '50%', width: '45px', height: '45px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0', fontSize: '0.95rem' }}
                                         >
                                             {opt}
                                         </button>
@@ -1198,7 +1306,7 @@ const Profile = () => {
                                                 key={opt}
                                                 className={`bd-chip ${editForm.marriedSisters === opt ? 'active' : ''}`}
                                                 onClick={() => setEditForm(prev => ({ ...prev, marriedSisters: opt }))}
-                                                style={{ backgroundColor: editForm.marriedSisters === opt ? '#fff0f3' : '#fff', color: editForm.marriedSisters === opt ? '#1a2a3a' : '#64748b', borderColor: editForm.marriedSisters === opt ? '#ff4b72' : '#e2e8f0', borderRadius: '50%', width: '45px', height: '45px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0', fontSize: '0.95rem' }}
+                                                style={{ backgroundColor: editForm.marriedSisters === opt ? '#fdf8e8' : '#fff', color: editForm.marriedSisters === opt ? '#1a2a3a' : '#64748b', borderColor: editForm.marriedSisters === opt ? '#D4AF37' : '#e2e8f0', borderRadius: '50%', width: '45px', height: '45px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0', fontSize: '0.95rem' }}
                                             >
                                                 {opt}
                                             </button>
@@ -1340,7 +1448,7 @@ const Profile = () => {
                                                 key={opt}
                                                 className={`bd-chip ${editForm.drinking === opt ? 'active' : ''}`}
                                                 onClick={() => setEditForm(prev => ({ ...prev, drinking: opt }))}
-                                                style={{ fontSize: '0.85rem', padding: '6px 14px', backgroundColor: editForm.drinking === opt ? '#fff3f5' : 'transparent', border: editForm.drinking === opt ? '1px solid #fecaca' : '1px solid #e5e7eb', color: editForm.drinking === opt ? '#e74c3c' : '#4a5568' }}
+                                                style={{ fontSize: '0.85rem', padding: '6px 14px', backgroundColor: editForm.drinking === opt ? '#fef9e7' : 'transparent', border: editForm.drinking === opt ? '1px solid #f5e6a3' : '1px solid #e5e7eb', color: editForm.drinking === opt ? '#D4AF37' : '#4a5568' }}
                                             >
                                                 {opt}
                                             </button>
@@ -1372,7 +1480,7 @@ const Profile = () => {
                                                 key={opt}
                                                 className={`bd-chip ${editForm.smoking === opt ? 'active' : ''}`}
                                                 onClick={() => setEditForm(prev => ({ ...prev, smoking: opt }))}
-                                                style={{ fontSize: '0.85rem', padding: '6px 14px', backgroundColor: editForm.smoking === opt ? '#fff3f5' : 'transparent', border: editForm.smoking === opt ? '1px solid #fecaca' : '1px solid #e5e7eb', color: editForm.smoking === opt ? '#e74c3c' : '#4a5568' }}
+                                                style={{ fontSize: '0.85rem', padding: '6px 14px', backgroundColor: editForm.smoking === opt ? '#fef9e7' : 'transparent', border: editForm.smoking === opt ? '1px solid #f5e6a3' : '1px solid #e5e7eb', color: editForm.smoking === opt ? '#D4AF37' : '#4a5568' }}
                                             >
                                                 {opt}
                                             </button>
@@ -1402,7 +1510,7 @@ const Profile = () => {
         return (
             <svg width="80" height="80" viewBox="0 0 80 80">
                 <circle cx="40" cy="40" r={radius} fill="none" stroke="#e5e7eb" strokeWidth="6" />
-                <circle cx="40" cy="40" r={radius} fill="none" stroke="#e74c3c" strokeWidth="6"
+                <circle cx="40" cy="40" r={radius} fill="none" stroke="#D4AF37" strokeWidth="6"
                     strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={strokeDashoffset}
                     transform="rotate(-90 40 40)" style={{ transition: 'stroke-dashoffset 0.8s ease' }} />
                 <text x="40" y="44" textAnchor="middle" fontSize="14" fontWeight="700" fill="#1f2937">{percentage}%</text>
@@ -1795,17 +1903,17 @@ const Profile = () => {
 
                             <h4 className="ep-subsection-title" style={{ marginTop: '24px' }}>Habits</h4>
                             <div className="ep-habits-grid">
-                                <div className="ep-habit-card" onClick={() => handleEditSection('lifestyle')} style={{ borderRadius: '8px', padding: '24px 16px', alignItems: 'flex-start', textAlign: 'left', gap: '12px', border: profileData.drinking ? '1.5px solid #fecaca' : '1px solid #e5e7eb', backgroundColor: profileData.drinking ? '#fff3f5' : 'transparent' }}>
-                                    <Wine size={24} color={profileData.drinking ? "#e74c3c" : "#9ca3af"} strokeWidth={profileData.drinking ? 2 : 1.5} />
-                                    <span style={{ fontSize: '0.9rem', color: profileData.drinking ? '#e74c3c' : '#64748b', fontWeight: profileData.drinking ? '600' : '500' }}>{profileData.drinking ? `Drinking: ${profileData.drinking}` : 'Add Drinking Habits'}</span>
+                                <div className="ep-habit-card" onClick={() => handleEditSection('lifestyle')} style={{ borderRadius: '8px', padding: '24px 16px', alignItems: 'flex-start', textAlign: 'left', gap: '12px', border: profileData.drinking ? '1.5px solid #f5e6a3' : '1px solid #e5e7eb', backgroundColor: profileData.drinking ? '#fef9e7' : 'transparent' }}>
+                                    <Wine size={24} color={profileData.drinking ? "#D4AF37" : "#9ca3af"} strokeWidth={profileData.drinking ? 2 : 1.5} />
+                                    <span style={{ fontSize: '0.9rem', color: profileData.drinking ? '#D4AF37' : '#64748b', fontWeight: profileData.drinking ? '600' : '500' }}>{profileData.drinking ? `Drinking: ${profileData.drinking}` : 'Add Drinking Habits'}</span>
                                 </div>
-                                <div className="ep-habit-card" onClick={() => handleEditSection('lifestyle')} style={{ borderRadius: '8px', padding: '24px 16px', alignItems: 'flex-start', textAlign: 'left', gap: '12px', border: profileData.dietaryHabit ? '1.5px solid #fecaca' : '1px solid #e5e7eb', backgroundColor: profileData.dietaryHabit ? '#fff3f5' : 'transparent' }}>
-                                    <Utensils size={24} color={profileData.dietaryHabit ? "#e74c3c" : "#9ca3af"} strokeWidth={profileData.dietaryHabit ? 2 : 1.5} />
-                                    <span style={{ fontSize: '0.9rem', color: profileData.dietaryHabit ? '#e74c3c' : '#64748b', fontWeight: profileData.dietaryHabit ? '600' : '500' }}>{profileData.dietaryHabit ? `Diet: ${profileData.dietaryHabit}` : 'Add Dietary Habits'}</span>
+                                <div className="ep-habit-card" onClick={() => handleEditSection('lifestyle')} style={{ borderRadius: '8px', padding: '24px 16px', alignItems: 'flex-start', textAlign: 'left', gap: '12px', border: profileData.dietaryHabit ? '1.5px solid #f5e6a3' : '1px solid #e5e7eb', backgroundColor: profileData.dietaryHabit ? '#fef9e7' : 'transparent' }}>
+                                    <Utensils size={24} color={profileData.dietaryHabit ? "#D4AF37" : "#9ca3af"} strokeWidth={profileData.dietaryHabit ? 2 : 1.5} />
+                                    <span style={{ fontSize: '0.9rem', color: profileData.dietaryHabit ? '#D4AF37' : '#64748b', fontWeight: profileData.dietaryHabit ? '600' : '500' }}>{profileData.dietaryHabit ? `Diet: ${profileData.dietaryHabit}` : 'Add Dietary Habits'}</span>
                                 </div>
-                                <div className="ep-habit-card" onClick={() => handleEditSection('lifestyle')} style={{ borderRadius: '8px', padding: '24px 16px', alignItems: 'flex-start', textAlign: 'left', gap: '12px', border: profileData.smoking ? '1.5px solid #fecaca' : '1px solid #e5e7eb', backgroundColor: profileData.smoking ? '#fff3f5' : 'transparent' }}>
-                                    <Cigarette size={24} color={profileData.smoking ? "#e74c3c" : "#9ca3af"} strokeWidth={profileData.smoking ? 2 : 1.5} />
-                                    <span style={{ fontSize: '0.9rem', color: profileData.smoking ? '#e74c3c' : '#64748b', fontWeight: profileData.smoking ? '600' : '500' }}>{profileData.smoking ? `Smoking: ${profileData.smoking}` : 'Add Smoking Habits'}</span>
+                                <div className="ep-habit-card" onClick={() => handleEditSection('lifestyle')} style={{ borderRadius: '8px', padding: '24px 16px', alignItems: 'flex-start', textAlign: 'left', gap: '12px', border: profileData.smoking ? '1.5px solid #f5e6a3' : '1px solid #e5e7eb', backgroundColor: profileData.smoking ? '#fef9e7' : 'transparent' }}>
+                                    <Cigarette size={24} color={profileData.smoking ? "#D4AF37" : "#9ca3af"} strokeWidth={profileData.smoking ? 2 : 1.5} />
+                                    <span style={{ fontSize: '0.9rem', color: profileData.smoking ? '#D4AF37' : '#64748b', fontWeight: profileData.smoking ? '600' : '500' }}>{profileData.smoking ? `Smoking: ${profileData.smoking}` : 'Add Smoking Habits'}</span>
                                 </div>
                             </div>
 
@@ -1838,9 +1946,9 @@ const Profile = () => {
                             )}
                         </div>
 
-                        {/* Logout */}
+                        {/* Update Profile */}
                         <div style={{ textAlign: 'center', padding: '1rem 0 2rem' }}>
-                            <button className="btn btn-outline" onClick={handleLogout} style={{ color: '#e74c3c', borderColor: '#e74c3c' }}>
+                            <button className="btn btn-outline" onClick={handleLogout} style={{ color: '#D4AF37', borderColor: '#D4AF37' }}>
                                 <LogOut size={16} /> Logout
                             </button>
                         </div>
@@ -1862,7 +1970,7 @@ const Profile = () => {
                             <div className="ep-detail-list">
                                 <div className="ep-detail-item">
                                     <Calendar size={18} className="ep-detail-icon" />
-                                    <span>{preferenceData.prefAgeFrom || '18'} years - {preferenceData.prefAgeTo || '30'} years</span>
+                                    <span>{preferenceData.prefAgeFrom && preferenceData.prefAgeTo ? `${preferenceData.prefAgeFrom} years - ${preferenceData.prefAgeTo} years` : "Doesn't Matter"}</span>
                                 </div>
                                 <div className="ep-detail-item">
                                     <Ruler size={18} className="ep-detail-icon" />
@@ -1870,11 +1978,11 @@ const Profile = () => {
                                 </div>
                                 <div className="ep-detail-item">
                                     <MapPin size={18} className="ep-detail-icon" />
-                                    <span>{preferenceData.prefCountry || "India"}</span>
+                                    <span>{preferenceData.prefCountry || "Doesn't Matter"}</span>
                                 </div>
                                 <div className="ep-detail-item">
                                     <Heart size={18} className="ep-detail-icon" />
-                                    <span>{preferenceData.prefMaritalStatus || "Never Married"}</span>
+                                    <span>{preferenceData.prefMaritalStatus || "Doesn't Matter"}</span>
                                 </div>
                                 {(preferenceData.prefMaritalStatus && preferenceData.prefMaritalStatus.trim() !== 'Never Married') && (
                                     <div className="ep-detail-item">
@@ -2064,6 +2172,12 @@ const Profile = () => {
                             </div>
                         </div>
 
+                        {/* Update Profile (Preferences) */}
+                        <div style={{ textAlign: 'center', padding: '1rem 0 2rem' }}>
+                            <button className="btn btn-outline" onClick={handleUpdateProfile} style={{ color: '#c49b63', borderColor: '#c49b63' }}>
+                                <Save size={16} /> Update Profile
+                            </button>
+                        </div>
                     </div>
                 )}
             </div>
@@ -2465,7 +2579,7 @@ const Profile = () => {
                                     setTimeout(() => setShowPrivacyModal(false), 200);
                                 }}>
                                     <div style={{ marginTop: '2px' }}>
-                                        <div style={{ width: '20px', height: '20px', borderRadius: '50%', border: isActive ? '6px solid #c0756b' : '2px solid #9ca3af', boxSizing: 'border-box' }}></div>
+                                        <div style={{ width: '20px', height: '20px', borderRadius: '50%', border: isActive ? '6px solid #D4AF37' : '2px solid #9ca3af', boxSizing: 'border-box' }}></div>
                                     </div>
                                     <div>
                                         <div style={{ color: isActive ? '#1a2a3a' : '#475569', fontWeight: 600, fontSize: '1rem', margin: '0 0 4px 0' }}>{opt.val}</div>

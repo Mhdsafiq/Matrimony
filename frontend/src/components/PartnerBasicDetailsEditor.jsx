@@ -272,7 +272,7 @@ const PartnerBasicDetailsEditor = ({ initialData, onSave, onClose }) => {
                     <div className="pbde-field-group">
                         <label>Partner's Age</label>
                         <div className="pbde-value-display pbde-clickable" onClick={() => setActiveModal('minAge')}>
-                            {form.prefAgeFrom || '18'} Years - {form.prefAgeTo || '30'} Years
+                            {form.prefAgeFrom && form.prefAgeTo ? `${form.prefAgeFrom} Years - ${form.prefAgeTo} Years` : "Doesn't Matter"}
                         </div>
                     </div>
 

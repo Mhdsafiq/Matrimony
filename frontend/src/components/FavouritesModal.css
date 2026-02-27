@@ -96,9 +96,9 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: #fff0f3;
-    border: 1.5px solid #fecaca;
-    color: #c0756b;
+    background: #fdf8e8;
+    border: 1.5px solid #f5e6a3;
+    color: #D4AF37;
     padding: 6px 12px;
     border-radius: 20px;
     font-size: 0.88rem;
@@ -122,7 +122,7 @@
 .fav-chip-remove {
     background: none;
     border: none;
-    color: #c0756b;
+    color: #D4AF37;
     cursor: pointer;
     padding: 0;
     display: flex;
@@ -133,8 +133,8 @@
 }
 
 .fav-chip-remove:hover {
-    color: #e74c3c;
-    background: #fecaca;
+    color: #D4AF37;
+    background: #f5e6a3;
 }
 
 /* Search */
@@ -158,9 +158,9 @@
 }
 
 .fav-search-input:focus {
-    border-color: #c0756b;
+    border-color: #D4AF37;
     background: #fff;
-    box-shadow: 0 0 0 3px rgba(192, 117, 107, 0.1);
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
 }
 
 .fav-search-input::placeholder {
@@ -229,7 +229,7 @@
 }
 
 .fav-modal-option.checked:hover {
-    background: #fff0f3;
+    background: #fdf8e8;
 }
 
 /* Checkbox */
@@ -247,8 +247,8 @@
 }
 
 .fav-checkbox.checked {
-    background: #c0756b;
-    border-color: #c0756b;
+    background: #D4AF37;
+    border-color: #D4AF37;
     transform: scale(1.05);
 }
 
@@ -282,7 +282,7 @@
 .fav-done-btn {
     width: 100%;
     padding: 14px;
-    background: linear-gradient(135deg, #c0756b 0%, #d4837a 100%);
+    background: linear-gradient(135deg, #D4AF37 0%, #e0c04e 100%);
     color: #fff;
     border: none;
     border-radius: 30px;
@@ -291,12 +291,12 @@
     cursor: pointer;
     font-family: 'Inter', sans-serif;
     transition: all 0.3s;
-    box-shadow: 0 4px 16px rgba(192, 117, 107, 0.3);
+    box-shadow: 0 4px 16px rgba(212, 175, 55, 0.3);
 }
 
 .fav-done-btn:hover {
     transform: translateY(-1px);
-    box-shadow: 0 6px 24px rgba(192, 117, 107, 0.45);
+    box-shadow: 0 6px 24px rgba(212, 175, 55, 0.45);
 }
 
 .fav-done-btn:active {

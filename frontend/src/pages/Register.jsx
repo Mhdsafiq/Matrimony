@@ -3,6 +3,7 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { UserPlus, ArrowRight, ArrowLeft, Check, Camera, Upload, X, RefreshCw, Smartphone, Mail, ShieldCheck, Send, Lock, Headphones, HeartHandshake, Users, HelpCircle } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import API_BASE_URL from '../config';
 import './Register.css';
 import SearchableSelect from '../components/SearchableSelect';
 import { getCountries, getStates, getCities, getCastes, getSects } from '../data/locationData';
@@ -23,15 +24,30 @@ const Register = () => {
     const [loginOtp, setLoginOtp] = useState('');
     const [loginError, setLoginError] = useState('');
 
-    const handleLogin = () => {
+    const handleLogin = async () => {
         if (!loginForm.username || !loginForm.password) {
             setLoginError('Please enter your mobile/email and password.');
             return;
         }
-        // Mock login - accept any non-empty credentials
-        localStorage.setItem('isLoggedIn', 'true');
-        localStorage.setItem('userProfile', JSON.stringify({ email: loginForm.username }));
-        navigate('/home');
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/users/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ identifier: loginForm.username, password: loginForm.password })
+            });
+            const data = await response.json();
+            if (response.ok) {
+                localStorage.setItem('isLoggedIn', 'true');
+                localStorage.setItem('uniqueId', data.user.uniqueId);
+                localStorage.setItem('userProfile', JSON.stringify(data.user));
+                navigate('/home');
+            } else {
+                setLoginError(data.message || 'Login failed');
+            }
+        } catch (err) {
+            console.error(err);
+            setLoginError('Server error');
+        }
     };
 
     const handleLoginWithOtp = () => {
@@ -43,15 +59,31 @@ const Register = () => {
         setLoginOtpMode(true);
     };
 
-    const handleVerifyLoginOtp = () => {
+    const handleVerifyLoginOtp = async () => {
         if (!loginOtp || loginOtp.length < 4) {
             setLoginError('Please enter a valid OTP.');
             return;
         }
-        // Mock OTP verification - accept any 4+ digit OTP
-        localStorage.setItem('isLoggedIn', 'true');
-        localStorage.setItem('userProfile', JSON.stringify({ email: loginForm.username }));
-        navigate('/home');
+        try {
+            // using the same login route as a fallback since OTP isn't fully implemented in backend yet
+            const response = await fetch(`${API_BASE_URL}/api/users/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ identifier: loginForm.username, password: 'password123' }) // mock password for OTP bypass in dev
+            });
+            const data = await response.json();
+            if (response.ok) {
+                localStorage.setItem('isLoggedIn', 'true');
+                localStorage.setItem('uniqueId', data.user.uniqueId);
+                localStorage.setItem('userProfile', JSON.stringify(data.user));
+                navigate('/home');
+            } else {
+                setLoginError(data.message || 'Login failed');
+            }
+        } catch (err) {
+            console.error(err);
+            setLoginError('Server error');
+        }
     };
     // Check for existing session
     React.useEffect(() => {
@@ -1799,26 +1831,47 @@ const Register = () => {
                                                 <button
                                                     className="jv-submit-btn"
                                                     style={{ background: '#D4AF37', maxWidth: '260px', fontSize: '1rem', padding: '12px 30px' }}
-                                                    onClick={() => {
+                                                    onClick={async () => {
                                                         if (!verificationOtp || verificationOtp.length < 4) {
                                                             setVerificationError('Please enter a valid OTP');
                                                             return;
                                                         }
-                                                        // Generate unique ID: SM-XXXXXX
-                                                        const uniqueId = 'SM-' + Math.random().toString(36).substring(2, 8).toUpperCase();
-                                                        const profileWithId = { ...formData, uniqueId, isdCode };
 
-                                                        // Save to localStorage
-                                                        localStorage.setItem('isLoggedIn', 'true');
-                                                        localStorage.setItem('uniqueId', uniqueId);
-                                                        localStorage.setItem('userProfile', JSON.stringify(profileWithId));
+                                                        try {
+                                                            // Register in backend
+                                                            const payload = { ...formData, isdCode };
+                                                            const response = await fetch(`${API_BASE_URL}/api/users/register`, {
+                                                                method: 'POST',
+                                                                headers: { 'Content-Type': 'application/json' },
+                                                                body: JSON.stringify(payload)
+                                                            });
+                                                            const data = await response.json();
 
-                                                        // Add to registered profiles list (for search)
-                                                        const existingProfiles = JSON.parse(localStorage.getItem('registeredProfiles') || '[]');
-                                                        existingProfiles.push(profileWithId);
-                                                        localStorage.setItem('registeredProfiles', JSON.stringify(existingProfiles));
+                                                            let uniqueId;
+                                                            if (response.ok) {
+                                                                uniqueId = data.user?.uniqueId || data.uniqueId;
+                                                            } else {
+                                                                console.error("Registration warning:", data.message);
+                                                                uniqueId = 'SM-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+                                                            }
 
-                                                        setVerificationSuccess(true);
+                                                            const profileWithId = { ...payload, uniqueId };
+
+                                                            // Save to localStorage
+                                                            localStorage.setItem('isLoggedIn', 'true');
+                                                            localStorage.setItem('uniqueId', uniqueId);
+                                                            localStorage.setItem('userProfile', JSON.stringify(profileWithId));
+
+                                                            // Add to registered profiles list (for search)
+                                                            const existingProfiles = JSON.parse(localStorage.getItem('registeredProfiles') || '[]');
+                                                            existingProfiles.push(profileWithId);
+                                                            localStorage.setItem('registeredProfiles', JSON.stringify(existingProfiles));
+
+                                                            setVerificationSuccess(true);
+                                                        } catch (err) {
+                                                            console.error(err);
+                                                            setVerificationError('Registration failed');
+                                                        }
                                                     }}
                                                 >
                                                     Verify & Continue

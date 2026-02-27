@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import { User, Camera, Star, Users, Edit2, Settings, HelpCircle, ChevronDown, Phone, MessageSquare, TrendingUp, Eye, LogOut } from 'lucide-react';
+import { User, Camera, Star, Users, Edit2, Settings, HelpCircle, ChevronDown, Phone, MessageSquare, TrendingUp, Eye, LogOut, FileText, Briefcase, Heart, MapPin, GraduationCap, Utensils } from 'lucide-react';
+import API_BASE_URL from '../config';
 import './Home.css';
 
 const Home = () => {
@@ -15,35 +16,167 @@ const Home = () => {
   });
 
   const [completionPercentage, setCompletionPercentage] = useState(0);
+  const [incompleteItems, setIncompleteItems] = useState([]);
+
+  // Define all profile completion checks
+  const profileSections = [
+    {
+      id: 'photo',
+      label: 'Add Photo(s)',
+      icon: <Camera size={24} color="#43a047" />,
+      iconBg: '#e8f5e9',
+      fields: ['photo'],
+      navState: { openPhotos: true }
+    },
+    {
+      id: 'basic',
+      label: 'Basic Details',
+      icon: <User size={24} color="#1e88e5" />,
+      iconBg: '#e3f2fd',
+      fields: ['gender', 'dob', 'height', 'maritalStatus', 'religion'],
+      navState: { openSection: 'basic' }
+    },
+    {
+      id: 'about',
+      label: 'About Me',
+      icon: <FileText size={24} color="#8e24aa" />,
+      iconBg: '#f3e5f5',
+      fields: ['about'],
+      navState: { openSection: 'about' }
+    },
+    {
+      id: 'education',
+      label: 'Education Details',
+      icon: <GraduationCap size={24} color="#00897b" />,
+      iconBg: '#e0f2f1',
+      fields: ['education', 'occupation', 'employmentType'],
+      navState: { openSection: 'education' }
+    },
+    {
+      id: 'contact',
+      label: 'Contact Details',
+      icon: <Phone size={24} color="#e53935" />,
+      iconBg: '#ffebee',
+      fields: ['mobile', 'email'],
+      navState: { openSection: 'contact' }
+    },
+    {
+      id: 'family',
+      label: 'Family Details',
+      icon: <Users size={24} color="#fb8c00" />,
+      iconBg: '#fff3e0',
+      fields: ['fatherOccupation', 'motherOccupation', 'familyType', 'familyStatus'],
+      navState: { openSection: 'family' }
+    },
+    {
+      id: 'horoscope',
+      label: 'Add Horoscope',
+      icon: <Star size={24} color="#1e88e5" />,
+      iconBg: '#e3f2fd',
+      fields: ['horoscope'],
+      navState: { openSection: 'basic' }
+    },
+    {
+      id: 'location',
+      label: 'Location Details',
+      icon: <MapPin size={24} color="#6d4c41" />,
+      iconBg: '#efebe9',
+      fields: ['country', 'state', 'city'],
+      navState: { openSection: 'basic' }
+    },
+    {
+      id: 'lifestyle',
+      label: 'Lifestyle',
+      icon: <Utensils size={24} color="#00acc1" />,
+      iconBg: '#e0f7fa',
+      fields: ['smoking', 'drinking'],
+      navState: { openSection: 'lifestyle' }
+    },
+    {
+      id: 'partner',
+      label: 'Partner Preferences',
+      icon: <Heart size={24} color="#D4AF37" />,
+      iconBg: '#fdf8e8',
+      fields: [],
+      navState: { openPreferences: true }
+    },
+  ];
 
   useEffect(() => {
-    const savedProfile = localStorage.getItem('userProfile');
-    if (savedProfile) {
-      try {
-        const parsed = JSON.parse(savedProfile);
-        setProfileData(prev => ({ ...prev, ...parsed }));
+    const fetchProfile = async () => {
+      const savedProfile = localStorage.getItem('userProfile');
+      if (savedProfile) {
+        try {
+          const parsed = JSON.parse(savedProfile);
 
-        // Calculate completion
-        const fields = [
-          'fullName', 'gender', 'dobDay', 'mobile', 'email',
-          'religion', 'country', 'state', 'city',
-          'education', 'occupation', 'income', 'photo', 'height'
-        ];
-        let completed = 0;
-        fields.forEach(field => {
-          const value = parsed[field];
-          if (value && value !== 'Not Specified' && value !== '') {
-            completed++;
+          // Seed initial display from localStorage
+          setProfileData(prev => ({ ...prev, ...parsed }));
+
+          // Use upstream granular completion logic
+          const allFields = [];
+          profileSections.forEach(sec => {
+            sec.fields.forEach(f => {
+              if (!allFields.includes(f)) allFields.push(f);
+            });
+          });
+
+          const calculateCompletion = (data) => {
+            let completed = 0;
+            allFields.forEach(field => {
+              const value = data[field];
+              if (value && value !== 'Not Specified' && value !== '') {
+                completed++;
+              }
+            });
+            return Math.round((completed / allFields.length) * 100);
+          };
+
+          setCompletionPercentage(calculateCompletion(parsed));
+
+          // Find incomplete sections
+          const updateIncomplete = (data) => {
+            const incomplete = profileSections.filter(sec => {
+              if (sec.fields.length === 0) return false; // always show partner prefs if needed
+              return sec.fields.some(field => {
+                const value = data[field];
+                return !value || value === 'Not Specified' || value === '';
+              });
+            });
+            setIncompleteItems(incomplete);
+          };
+          updateIncomplete(parsed);
+
+          // Fetch fresh data from backend to ensure accuracy (local change)
+          const identifier = parsed.uniqueId || parsed.email || parsed.mobile;
+          if (identifier) {
+            try {
+              const response = await fetch(`${API_BASE_URL}/api/users/profile/${identifier}`);
+              if (response.ok) {
+                const dbProfile = await response.json();
+                const updatedData = { ...parsed, ...dbProfile, fullName: dbProfile.name || dbProfile.fullName };
+                setProfileData(prev => ({ ...prev, ...updatedData }));
+                setCompletionPercentage(calculateCompletion(updatedData));
+                updateIncomplete(updatedData);
+                localStorage.setItem('userProfile', JSON.stringify(updatedData));
+              }
+            } catch (apiError) {
+              console.error("API error fetching profile in Home:", apiError);
+            }
           }
-        });
-        setCompletionPercentage(Math.round((completed / fields.length) * 100));
-      } catch (e) {
-        console.error("Error parsing profile", e);
+        } catch (e) {
+          console.error("Error parsing profile", e);
+        }
+      } else {
+        // No profile saved = everything incomplete
+        setIncompleteItems(profileSections.filter(s => s.fields.length > 0));
       }
-    }
-    const uid = localStorage.getItem('uniqueId');
-    if (uid) setProfileData(prev => ({ ...prev, uniqueId: uid }));
-  }, []);
+      const uid = localStorage.getItem('uniqueId');
+      if (uid) setProfileData(prev => ({ ...prev, uniqueId: uid }));
+    }, []);
+
+  const handleQuickAction = (section) => {
+    navigate('/profile', { state: section.navState });
+  };
 
   return (
     <div className="home-page">
@@ -61,9 +194,7 @@ const Home = () => {
               )}
             </div>
             <h3 className="sidebar-name">{profileData.fullName}</h3>
-            <div className="sidebar-brand">
-              <span>☘️ Sri Mayan Matrimony</span>
-            </div>
+
             <div className="sidebar-id">{profileData.uniqueId}</div>
             <div className="sidebar-membership">Free member</div>
           </div>
@@ -80,7 +211,7 @@ const Home = () => {
             <div className="sidebar-menu-item" onClick={() => navigate('/profile', { state: { openPreferences: true } })}>
               <Settings size={16} /> Edit preferences
             </div>
-            <div className="sidebar-menu-item" style={{ color: '#e74c3c' }} onClick={() => { localStorage.removeItem('isLoggedIn'); localStorage.removeItem('uniqueId'); localStorage.removeItem('userProfile'); navigate('/'); }}>
+            <div className="sidebar-menu-item" style={{ color: '#D4AF37' }} onClick={() => { localStorage.removeItem('isLoggedIn'); localStorage.removeItem('uniqueId'); localStorage.removeItem('userProfile'); navigate('/'); }}>
               <LogOut size={16} /> Logout
             </div>
           </div>
@@ -108,26 +239,24 @@ const Home = () => {
               </div>
             </div>
 
-            <div className="quick-action-cards">
-              <div className="quick-action-card" onClick={() => navigate('/profile')}>
-                <div className="quick-action-icon" style={{ background: '#e8f5e9' }}>
-                  <Camera size={24} color="#43a047" />
-                </div>
-                <span>Add Photo(s)</span>
+            {incompleteItems.length > 0 && (
+              <div className="quick-action-cards">
+                {incompleteItems.map(item => (
+                  <div className="quick-action-card" key={item.id} onClick={() => handleQuickAction(item)}>
+                    <div className="quick-action-icon" style={{ background: item.iconBg }}>
+                      {item.icon}
+                    </div>
+                    <span>{item.label}</span>
+                  </div>
+                ))}
               </div>
-              <div className="quick-action-card" onClick={() => navigate('/profile')}>
-                <div className="quick-action-icon" style={{ background: '#e3f2fd' }}>
-                  <Star size={24} color="#1e88e5" />
-                </div>
-                <span>Add Horoscope</span>
+            )}
+
+            {incompleteItems.length === 0 && (
+              <div className="profile-complete-msg">
+                <span>🎉 Great job! Your profile is complete.</span>
               </div>
-              <div className="quick-action-card" onClick={() => navigate('/profile')}>
-                <div className="quick-action-icon" style={{ background: '#fff3e0' }}>
-                  <Users size={24} color="#fb8c00" />
-                </div>
-                <span>Family Details</span>
-              </div>
-            </div>
+            )}
           </section>
 
           {/* Become a Paid Member Section */}
@@ -150,7 +279,7 @@ const Home = () => {
                   <span>Higher chances of response</span>
                 </li>
                 <li>
-                  <Eye size={16} color="#dc2626" />
+                  <Eye size={16} color="#D4AF37" />
                   <span>View and match horoscopes</span>
                 </li>
               </ul>
