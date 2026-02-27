@@ -496,9 +496,9 @@
     position: relative;
     height: 90vh;
     min-height: 500px;
-    background-image: url('https://images.unsplash.com/photo-1519741497674-611481863552?w=1600&auto=format&fit=crop&q=80');
+    background-image: url('/couple_hero.jpg');
     background-size: cover;
-    background-position: center;
+    background-position: center 25%;
     background-repeat: no-repeat;
     display: flex;
     flex-direction: column;
