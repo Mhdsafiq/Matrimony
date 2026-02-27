@@ -136,19 +136,19 @@
 }
 
 .peoe-chip.selected {
-    border-color: #fecaca;
+    border-color: #f5e6a3;
     color: #1a2a3a;
     background: #fff;
 }
 
 .peoe-chip.selected.default-sel {
-    border-color: #e74c3c;
+    border-color: #D4AF37;
     color: #1a2a3a;
-    background: #fff0f3;
+    background: #fdf8e8;
 }
 
 .peoe-chip .lucide {
-    color: #e74c3c;
+    color: #D4AF37;
 }
 
 .peoe-chip:not(.selected) .lucide {
@@ -186,7 +186,7 @@
 
 .peoe-save-btn {
     width: 100%;
-    background: #db4b55;
+    background: #D4AF37;
     color: #fff;
     border: none;
     padding: 14px;
@@ -198,7 +198,7 @@
 }
 
 .peoe-save-btn:hover {
-    background: #c93b45;
+    background: #b8962e;
 }
 
 /* Sub-modals */
@@ -306,8 +306,8 @@
 }
 
 .peoe-small-chip {
-    background: #fff0f3;
-    border: 1px solid #fecaca;
+    background: #fdf8e8;
+    border: 1px solid #f5e6a3;
     color: #1a2a3a;
     padding: 4px 10px;
     border-radius: 16px;
@@ -320,7 +320,7 @@
 .peoe-small-chip button {
     background: none;
     border: none;
-    color: #db4b55;
+    color: #D4AF37;
     padding: 0;
     cursor: pointer;
     display: flex;
@@ -328,7 +328,7 @@
 }
 
 .peoe-more-count {
-    color: #db4b55;
+    color: #D4AF37;
     font-size: 0.85rem;
     font-weight: 600;
     display: inline-flex;
@@ -397,8 +397,8 @@
 }
 
 .peoe-checkbox.selected {
-    background: #db4b55;
-    border-color: #db4b55;
+    background: #D4AF37;
+    border-color: #D4AF37;
 }
 
 .peoe-circle-checkbox {
@@ -416,14 +416,14 @@
 }
 
 .peoe-circle-checkbox.selected {
-    border-color: #db4b55;
+    border-color: #D4AF37;
 }
 
 .peoe-circle-inner {
     width: 14px;
     height: 14px;
     border-radius: 50%;
-    background: #db4b55;
+    background: #D4AF37;
 }
 
 .peoe-search-bar-outlined {
@@ -458,7 +458,7 @@
 }
 
 .peoe-done-btn {
-    background: #db4b55;
+    background: #D4AF37;
     color: #fff;
     border: none;
     padding: 10px 24px;
@@ -497,7 +497,7 @@
     left: 0;
     right: 0;
     height: 2px;
-    background: #db4b55;
+    background: #D4AF37;
 }
 
 .peoe-label-small {

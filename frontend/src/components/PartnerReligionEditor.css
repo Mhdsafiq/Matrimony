@@ -111,7 +111,7 @@
 
 .proe-save-btn {
     width: 100%;
-    background: #db4b55;
+    background: #D4AF37;
     color: #fff;
     border: none;
     padding: 14px;
@@ -123,7 +123,7 @@
 }
 
 .proe-save-btn:hover {
-    background: #c93b45;
+    background: #b8962e;
 }
 
 /* ============ Modal Overlay ============ */
@@ -211,13 +211,13 @@
     border-radius: 16px;
     font-size: 0.85rem;
     font-weight: 500;
-    border: 1px solid #fecaca;
+    border: 1px solid #f5e6a3;
 }
 
 .proe-selected-chip button {
     background: none;
     border: none;
-    color: #db4b55;
+    color: #D4AF37;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -287,8 +287,8 @@
 }
 
 .proe-checkbox.checked {
-    background: #db4b55;
-    border-color: #db4b55;
+    background: #D4AF37;
+    border-color: #D4AF37;
 }
 
 .proe-check-mark {
@@ -311,7 +311,7 @@
 }
 
 .proe-done-btn {
-    background: #db4b55;
+    background: #D4AF37;
     color: #fff;
     border: none;
     padding: 10px 32px;
@@ -323,5 +323,5 @@
 }
 
 .proe-done-btn:hover {
-    background: #c93b45;
+    background: #b8962e;
 }

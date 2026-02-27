@@ -1,0 +1,247 @@
+.profile-view-page {
+    background: #f0f2f5;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.pv-container {
+    max-width: 620px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 5.5rem 1rem 3rem;
+    flex: 1;
+}
+
+/* Back Button - outside hero */
+.pv-back-btn {
+    background: none;
+    border: none;
+    color: #374151;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    margin-bottom: 8px;
+    transition: background 0.2s;
+}
+
+.pv-back-btn:hover {
+    background: #e5e7eb;
+}
+
+/* Hero Section */
+.pv-hero {
+    background: #1e293b;
+    border-radius: 16px 16px 0 0;
+    overflow: hidden;
+    position: relative;
+}
+
+/* Photo Block - large, centered, prominent */
+.pv-photo-block {
+    position: relative;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    background: linear-gradient(180deg, #e8ecf0 0%, #d1d5db 100%);
+    min-height: 350px;
+}
+
+.pv-photo-block img {
+    width: auto;
+    max-width: 100%;
+    height: 350px;
+    object-fit: contain;
+    display: block;
+}
+
+.pv-photo-placeholder {
+    width: 100%;
+    height: 350px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #e5e7eb;
+}
+
+/* Photo Count Badge */
+.pv-photo-count-badge {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: rgba(55, 65, 81, 0.85);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 8px 14px;
+    border-radius: 24px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    backdrop-filter: blur(4px);
+}
+
+/* Hero Info - name, id, managed by */
+.pv-hero-info {
+    padding: 20px 24px 10px;
+}
+
+.pv-name {
+    font-size: 1.45rem;
+    color: #fff;
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.pv-id {
+    color: #94a3b8;
+    font-size: 0.88rem;
+    margin-bottom: 6px;
+}
+
+.pv-managed {
+    color: #D4AF37;
+    font-size: 0.85rem;
+    font-style: italic;
+    font-weight: 500;
+}
+
+/* Tabs */
+.pv-tabs {
+    display: flex;
+    background: #334155;
+    padding: 0 14px;
+}
+
+.pv-tab {
+    padding: 13px 20px;
+    border: none;
+    background: transparent;
+    color: #94a3b8;
+    font-size: 0.92rem;
+    font-weight: 500;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+}
+
+.pv-tab.active {
+    color: #fff;
+    border-bottom-color: #D4AF37;
+}
+
+.pv-tab:hover {
+    color: #e2e8f0;
+}
+
+/* Content Area */
+.pv-content {
+    background: #fff;
+    border-radius: 0 0 16px 16px;
+    padding: 22px 20px;
+}
+
+.pv-quick-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 22px;
+}
+
+.pv-quick-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 0.9rem;
+    color: #374151;
+}
+
+.pv-quick-item svg {
+    flex-shrink: 0;
+    color: #6b7280;
+    margin-top: 2px;
+}
+
+.pv-card {
+    background: #fff;
+    border: 1px solid #f0f0f0;
+    border-radius: 10px;
+    padding: 18px;
+    margin-bottom: 14px;
+}
+
+.pv-card h3 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 10px;
+}
+
+.pv-card p {
+    color: #4b5563;
+    font-size: 0.92rem;
+    line-height: 1.6;
+}
+
+.pv-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 9px 0;
+    border-bottom: 1px solid #f3f4f6;
+    gap: 16px;
+}
+
+.pv-row:last-child {
+    border-bottom: none;
+}
+
+.pv-row span {
+    color: #6b7280;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+.pv-row strong {
+    color: #1f2937;
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-align: right;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .pv-container {
+        padding: 5rem 0.5rem 2rem;
+    }
+
+    .pv-photo-block {
+        min-height: 280px;
+    }
+
+    .pv-photo-block img {
+        height: 280px;
+    }
+
+    .pv-photo-placeholder {
+        height: 280px;
+    }
+
+    .pv-quick-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .pv-tabs {
+        overflow-x: auto;
+    }
+
+    .pv-tab {
+        white-space: nowrap;
+        font-size: 0.85rem;
+        padding: 11px 14px;
+    }
+}

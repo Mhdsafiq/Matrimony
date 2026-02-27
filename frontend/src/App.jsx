@@ -5,7 +5,7 @@ import Home from './pages/Home';
 import Profile from './pages/Profile';
 import Search from './pages/Search';
 import Interests from './pages/Interests';
-import About from './pages/About';
+import ProfileView from './pages/ProfileView';
 import Matches from './pages/Matches';
 import ComingSoon from './pages/ComingSoon';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -26,7 +26,8 @@ function App() {
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/search" element={<ProtectedRoute><Search /></ProtectedRoute>} />
           <Route path="/interests" element={<ProtectedRoute><Interests /></ProtectedRoute>} />
-          <Route path="/about" element={<ProtectedRoute><About /></ProtectedRoute>} />
+          <Route path="/profile-view" element={<ProtectedRoute><ProfileView /></ProtectedRoute>} />
+
           <Route path="/matches" element={<ProtectedRoute><Matches /></ProtectedRoute>} />
 
           <Route path="*" element={<ComingSoon title="Page Not Found" />} />

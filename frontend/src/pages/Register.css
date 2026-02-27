@@ -503,8 +503,8 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
-    align-items: center;
-    text-align: center;
+    align-items: flex-start;
+    text-align: left;
 }
 
 .ts-hero-overlay {
@@ -520,17 +520,31 @@
 .ts-hero-content {
     position: relative;
     z-index: 2;
-    padding: 2rem;
-    max-width: 800px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: fit-content;
+    padding: 2rem 0;
+    margin-left: 8%;
+    max-width: min(700px, 100%);
 }
 
 .ts-hero-title {
     font-size: 3.5rem;
     font-weight: 700;
     color: #ffffff;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
     font-family: 'Inter', sans-serif;
+    line-height: 1.15;
+}
+
+.ts-hero-title-line {
+    display: block;
+}
+
+.ts-hero-title-focus {
+    text-align: center;
 }
 
 .ts-hero-subtitle {
@@ -543,8 +557,7 @@
 }
 
 .ts-hero-btn {
-    background: #00bcd4;
-    /* teal button like tamilshaadi */
+    background: #d4af37;
     color: #ffffff;
     font-size: 1.1rem;
     font-weight: 600;
@@ -554,10 +567,12 @@
     cursor: pointer;
     transition: background 0.3s;
     font-family: 'Inter', sans-serif;
+    align-self: center;
+    margin-top: 30px;
 }
 
 .ts-hero-btn:hover {
-    background: #00acc1;
+    background: #b8962e;
 }
 
 /* --- Trust Section --- */
@@ -653,6 +668,326 @@
     line-height: 1.6;
 }
 
+/* --- Three Steps Section --- */
+.ts-steps-section {
+    padding: 4.5rem 6% 5rem;
+    background: #f4f5f7;
+}
+
+.ts-steps-header {
+    max-width: 1180px;
+    margin: 0 auto 2.4rem;
+}
+
+.ts-steps-kicker {
+    margin: 0;
+    color: #6e88a8;
+    font-size: 1rem;
+    letter-spacing: 0.16em;
+    font-weight: 700;
+}
+
+.ts-steps-title {
+    margin: 0.9rem 0 0;
+    font-size: 3.2rem;
+    color: #111827;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.ts-steps-title span {
+    color: var(--primary);
+}
+
+.ts-steps-grid {
+    max-width: 1180px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 2.2rem;
+}
+
+.ts-step-card {
+    display: flex;
+    flex-direction: column;
+    gap: 1.8rem;
+}
+
+.ts-step-art {
+    background: transparent;
+    min-height: 190px;
+    position: relative;
+}
+
+.ts-step-text {
+    margin: 0;
+    font-size: 1.85rem;
+    font-weight: 600;
+    color: #0f172a;
+    line-height: 1.35;
+}
+
+.ts-step-text span {
+    color: var(--primary);
+    margin-right: 6px;
+}
+
+.ts-step-art-preference {
+    padding: 18px 0 0;
+    max-width: 330px;
+}
+
+.ts-art-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.ts-art-check {
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+    background: #c9cfd8;
+    display: inline-block;
+}
+
+.ts-art-check.active {
+    background: var(--primary);
+}
+
+.ts-art-check.active::after {
+    content: '';
+    display: block;
+    width: 8px;
+    height: 5px;
+    border: 2px solid #fff;
+    border-top: 0;
+    border-right: 0;
+    transform: rotate(-45deg);
+    margin: 5px 0 0 4px;
+}
+
+.ts-art-line {
+    height: 14px;
+    border-radius: 20px;
+    background: #b5becb;
+    display: inline-block;
+}
+
+.ts-art-line.long {
+    width: 235px;
+}
+
+.ts-art-line.medium {
+    width: 185px;
+}
+
+.ts-art-panel {
+    width: min(230px, 72%);
+    height: 80px;
+    border-radius: 40px;
+    background: #ffffff;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.14);
+    position: absolute;
+    right: 0;
+    top: 74px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+}
+
+.ts-art-dot {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: var(--primary);
+}
+
+.ts-step-art-browse {
+    padding-top: 8px;
+    max-width: 330px;
+}
+
+.ts-search-bar {
+    width: min(285px, 100%);
+    height: 48px;
+    border: 1px solid #d8dde6;
+    border-radius: 25px;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    color: #94a3b8;
+    font-size: 0.85rem;
+    position: relative;
+}
+
+.ts-search-bar::after {
+    content: '';
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    border: 2px solid #2a7ede;
+    border-radius: 50%;
+}
+
+.ts-search-bar::before {
+    content: '';
+    position: absolute;
+    right: 17px;
+    top: calc(50% + 6px);
+    width: 7px;
+    height: 2px;
+    background: #2a7ede;
+    transform: rotate(45deg);
+    border-radius: 2px;
+}
+
+.ts-profile-card {
+    width: min(245px, 100%);
+    height: 82px;
+    margin-top: 20px;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 0 16px;
+}
+
+.ts-profile-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f8efcf, #edd38b);
+    border: 1px solid #d5dde7;
+}
+
+.ts-profile-meta {
+    width: 125px;
+    height: 10px;
+    border-radius: 20px;
+    background: #a6b1c0;
+}
+
+.ts-profile-line {
+    width: min(170px, 68%);
+    height: 10px;
+    border-radius: 20px;
+    background: #c5cdd8;
+    margin-top: 16px;
+}
+
+.ts-step-art-connect {
+    padding-top: 8px;
+    max-width: 330px;
+}
+
+.ts-connect-back {
+    position: absolute;
+    top: 24px;
+    width: 145px;
+    height: 130px;
+    border-radius: 12px;
+    border: 1px solid #bcc7d6;
+    background: #edf1f6;
+}
+
+.ts-connect-back.left {
+    left: 8px;
+    transform: rotate(-9deg);
+}
+
+.ts-connect-back.right {
+    right: 8px;
+    transform: rotate(9deg);
+}
+
+.ts-connect-front {
+    position: relative;
+    z-index: 2;
+    width: min(215px, 78%);
+    height: 128px;
+    margin: 22px auto 0;
+    border-radius: 12px;
+    background: #f7f7f8;
+    box-shadow: 0 10px 20px rgba(15, 23, 42, 0.12);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+}
+
+.ts-connect-front::before {
+    content: '';
+    width: 14px;
+    height: 24px;
+    border-radius: 2px;
+    background: #2a7ede;
+    position: absolute;
+    top: -8px;
+    left: 18px;
+}
+
+.ts-connect-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f8efcf, #edd38b);
+    border: 1px solid #9aa4b3;
+}
+
+.ts-connect-meta {
+    width: 105px;
+    height: 12px;
+    border-radius: 20px;
+    background: #aab3bf;
+}
+
+.ts-connect-badge {
+    position: absolute;
+    z-index: 3;
+    left: 86px;
+    bottom: 8px;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: var(--primary);
+    box-shadow: 0 8px 18px rgba(212, 175, 55, 0.55);
+}
+
+.ts-steps-cta-wrap {
+    max-width: 1180px;
+    margin: 2.2rem auto 0;
+    display: flex;
+    justify-content: center;
+}
+
+.ts-steps-cta {
+    background: var(--primary);
+    color: #ffffff;
+    border: none;
+    border-radius: 6px;
+    padding: 14px 52px;
+    font-size: 1.25rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.25s ease, transform 0.25s ease;
+    font-family: 'Inter', sans-serif;
+}
+
+.ts-steps-cta:hover {
+    background: var(--primary-dark);
+    transform: translateY(-1px);
+}
+
 /* --- Footer --- */
 .ts-footer {
     background: #2a2a2a;
@@ -707,6 +1042,11 @@
 
 /* Responsiveness */
 @media (max-width: 768px) {
+    .ts-hero-content {
+        padding: 1.5rem 0;
+        margin-left: 1.5rem;
+    }
+
     .ts-hero-title {
         font-size: 2.5rem;
     }
@@ -718,6 +1058,46 @@
     .ts-trust-section {
         flex-direction: column;
         padding: 3rem 5%;
+    }
+
+    .ts-steps-section {
+        padding: 3.5rem 1.2rem 4rem;
+    }
+
+    .ts-steps-header {
+        margin-bottom: 2rem;
+        text-align: left;
+    }
+
+    .ts-steps-kicker {
+        font-size: 1rem;
+    }
+
+    .ts-steps-title {
+        font-size: 2.1rem;
+    }
+
+    .ts-steps-grid {
+        grid-template-columns: 1fr;
+        gap: 1.7rem;
+    }
+
+    .ts-step-card {
+        gap: 1rem;
+    }
+
+    .ts-step-art {
+        min-height: 150px;
+    }
+
+    .ts-step-text {
+        font-size: 1.4rem;
+    }
+
+    .ts-steps-cta {
+        width: 100%;
+        max-width: 280px;
+        font-size: 1.2rem;
     }
 
     .ts-footer-top {

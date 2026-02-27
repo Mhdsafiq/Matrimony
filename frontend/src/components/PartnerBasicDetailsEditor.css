@@ -69,7 +69,7 @@
 
 .pbde-title-block p {
     font-size: 0.85rem;
-    color: #db4b55;
+    color: #D4AF37;
     margin: 0;
 }
 
@@ -81,14 +81,14 @@
 }
 
 .pbde-error-alert {
-    background: #fef2f2;
-    color: #dc2626;
+    background: #fdf8e8;
+    color: #D4AF37;
     padding: 12px 16px;
     border-radius: 8px;
     margin-bottom: 20px;
     font-size: 0.9rem;
     font-weight: 500;
-    border-left: 4px solid #dc2626;
+    border-left: 4px solid #D4AF37;
 }
 
 .pbde-field-group {
@@ -168,19 +168,19 @@
 }
 
 .pbde-chip.selected {
-    border-color: #fecaca;
+    border-color: #f5e6a3;
     color: #1a2a3a;
     background: #fff;
 }
 
 .pbde-chip.selected.default-sel {
-    border-color: #e74c3c;
+    border-color: #D4AF37;
     color: #1a2a3a;
-    background: #fff0f3;
+    background: #fdf8e8;
 }
 
 .pbde-chip .lucide {
-    color: #e74c3c;
+    color: #D4AF37;
 }
 
 .pbde-chip:not(.selected) .lucide {
@@ -201,7 +201,7 @@
 
 .pbde-save-btn {
     width: 100%;
-    background: #db4b55;
+    background: #D4AF37;
     color: #fff;
     border: none;
     padding: 14px;
@@ -213,7 +213,7 @@
 }
 
 .pbde-save-btn:hover {
-    background: #c93b45;
+    background: #b8962e;
 }
 
 
@@ -309,8 +309,8 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    background: #fff0f3;
-    border: 1px solid #fecaca;
+    background: #fdf8e8;
+    border: 1px solid #f5e6a3;
     border-radius: 20px;
     padding: 6px 12px;
     margin: 16px 0;
@@ -324,7 +324,7 @@
 .pbde-chip-clear {
     background: none;
     border: none;
-    color: #db4b55;
+    color: #D4AF37;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -375,8 +375,8 @@
 }
 
 .pbde-checkbox.selected {
-    background: #db4b55;
-    border-color: #db4b55;
+    background: #D4AF37;
+    border-color: #D4AF37;
 }
 
 .pbde-radio {
@@ -391,14 +391,14 @@
 }
 
 .pbde-radio.selected {
-    border-color: #db4b55;
+    border-color: #D4AF37;
 }
 
 .pbde-radio-inner {
     width: 10px;
     height: 10px;
     border-radius: 50%;
-    background: #db4b55;
+    background: #D4AF37;
 }
 
 .pbde-list-item:has(.pbde-radio.selected) span {

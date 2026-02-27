@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import { UserPlus, ArrowRight, ArrowLeft, Check, Camera, Upload, X, RefreshCw, Smartphone, Mail, ShieldCheck, Send, Lock, Headphones, HeartHandshake, Users, HelpCircle } from 'lucide-react';
+import { UserPlus, ArrowRight, ArrowLeft, Check, Camera, Upload, X, RefreshCw, Smartphone, Mail, ShieldCheck, Send, Lock, Headphones, Users, HelpCircle } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import './Register.css';
 import SearchableSelect from '../components/SearchableSelect';
@@ -688,25 +688,11 @@ const Register = () => {
                 <div className="ts-hero-section">
                     <div className="ts-hero-overlay"></div>
                     <div className="ts-hero-content">
-                        <h1 className="ts-hero-title">Find your forever</h1>
-                        <h2 className="ts-hero-subtitle">Discover a world beyond matrimony</h2>
+                        <h1 className="ts-hero-title">
+                            <span className="ts-hero-title-line">Find the one meant</span>
+                            <span className="ts-hero-title-line ts-hero-title-focus">for you</span>
+                        </h1>
                         <button className="ts-hero-btn" onClick={() => setShowRegistrationForm(true)}>Let's Begin</button>
-                    </div>
-                </div>
-
-                {/* Trust Section */}
-                <div className="ts-trust-section">
-                    <div className="ts-trust-item">
-                        <ShieldCheck size={40} className="ts-trust-icon" />
-                        <p>Fastest Growing Matchmaking Service</p>
-                    </div>
-                    <div className="ts-trust-item">
-                        <Users size={40} className="ts-trust-icon" />
-                        <p>10 Lakh+ Success Stories</p>
-                    </div>
-                    <div className="ts-trust-item">
-                        <HeartHandshake size={40} className="ts-trust-icon" />
-                        <p>Matchmaking Powered by AI</p>
                     </div>
                 </div>
 
@@ -743,6 +729,72 @@ const Register = () => {
                         </div>
                     </div>
                 </div>
+
+                {/* Three Steps Section */}
+                <section className="ts-steps-section">
+                    <div className="ts-steps-header">
+                        <p className="ts-steps-kicker">THREE SIMPLE STEPS TO</p>
+                        <h2 className="ts-steps-title">
+                            Find the <span>One for You</span>
+                        </h2>
+                    </div>
+
+                    <div className="ts-steps-grid">
+                        <article className="ts-step-card">
+                            <div className="ts-step-art ts-step-art-preference" aria-hidden="true">
+                                <div className="ts-art-row">
+                                    <span className="ts-art-check active"></span>
+                                    <span className="ts-art-line long"></span>
+                                </div>
+                                <div className="ts-art-row">
+                                    <span className="ts-art-check"></span>
+                                    <span className="ts-art-line medium"></span>
+                                </div>
+                                <div className="ts-art-row">
+                                    <span className="ts-art-check active"></span>
+                                    <span className="ts-art-line long"></span>
+                                </div>
+                                <div className="ts-art-panel">
+                                    <span className="ts-art-dot"></span>
+                                    <span className="ts-art-dot"></span>
+                                    <span className="ts-art-dot"></span>
+                                </div>
+                            </div>
+                            <p className="ts-step-text"><span>01.</span> Define Your Partner Preferences</p>
+                        </article>
+
+                        <article className="ts-step-card">
+                            <div className="ts-step-art ts-step-art-browse" aria-hidden="true">
+                                <div className="ts-search-bar">
+                                    <span>Search</span>
+                                </div>
+                                <div className="ts-profile-card">
+                                    <span className="ts-profile-avatar"></span>
+                                    <span className="ts-profile-meta"></span>
+                                </div>
+                                <div className="ts-profile-line"></div>
+                            </div>
+                            <p className="ts-step-text"><span>02.</span> Browse Profiles</p>
+                        </article>
+
+                        <article className="ts-step-card">
+                            <div className="ts-step-art ts-step-art-connect" aria-hidden="true">
+                                <div className="ts-connect-back left"></div>
+                                <div className="ts-connect-back right"></div>
+                                <div className="ts-connect-front">
+                                    <span className="ts-connect-avatar"></span>
+                                    <span className="ts-connect-meta"></span>
+                                </div>
+                                <span className="ts-connect-badge"></span>
+                            </div>
+                            <p className="ts-step-text"><span>03.</span> Send Interests &amp; Connect</p>
+                        </article>
+                    </div>
+
+                    <div className="ts-steps-cta-wrap">
+                        <button className="ts-steps-cta" onClick={() => setShowRegistrationForm(true)}>Get Started</button>
+                    </div>
+                </section>
 
                 {/* Footer */}
                 <footer className="ts-footer">
