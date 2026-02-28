@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
 import './SearchableSelect.css';
 
-const SearchableSelect = ({ name, value, onChange, options, placeholder, disabled, className }) => {
+const SearchableSelect = ({ name, value, onChange, options = [], placeholder, disabled, className }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [highlightedIndex, setHighlightedIndex] = useState(-1);

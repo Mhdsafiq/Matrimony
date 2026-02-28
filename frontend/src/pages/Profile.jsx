@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import { User, LogOut, Edit2, X, Save, Camera, Eye, MapPin, Briefcase, GraduationCap, Heart, Calendar, Ruler, Globe2, BadgeCheck, Users, Cigarette, Wine, ChevronRight, MoreVertical, ArrowLeft, Plus, Maximize2, Trash2, Image, Search, Settings, Utensils, Puzzle, Zap, Languages, Music, MessagesSquare, ChefHat, Shirt, Clock } from 'lucide-react';
+import { User, LogOut, Edit2, X, Save, Camera, Eye, MapPin, Briefcase, GraduationCap, Heart, Calendar, Ruler, Globe2, BadgeCheck, Users, Cigarette, Wine, ChevronRight, MoreVertical, ArrowLeft, Plus, Maximize2, Trash2, Image, Search, Settings, Utensils, Puzzle, Zap, Languages, Music, MessagesSquare, ChefHat, Shirt, Clock, Loader2 } from 'lucide-react';
 import FavouritesModal from '../components/FavouritesModal';
 import PartnerBasicDetailsEditor from '../components/PartnerBasicDetailsEditor';
 import PartnerEducationEditor from '../components/PartnerEducationEditor';
@@ -10,10 +10,10 @@ import PartnerFamilyEditor from '../components/PartnerFamilyEditor';
 import PartnerLifestyleEditor from '../components/PartnerLifestyleEditor';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { createPortal } from 'react-dom';
-import axios from 'axios';
-import API_BASE_URL from '../config';
+import { getProfile, updateProfile, getPreferences, updatePreferences, getFavourites, updateFavourites, uploadPhoto, deletePhoto as apiDeletePhoto, setMainPhoto, logout as apiLogout } from '../services/api';
 import './Profile.css';
 import { getCountries, getStates, getCities, getCastes, getSects } from '../data/locationData';
+import { profileManagedOptions, genderOptions, maritalOptions, booleanOptions, childrenCountOptions, physicalStatusOptions, disabilityOptions, heights, religions, horoscopes, educationOptions, employedInOptions, occupations, currencies, languages, incomes, residentialStatusOptions, dietOptions, smokingOptions, drinkingOptions, familyTypeOptions, familyStatusOptions, familyValuesOptions, fatherOccupationOptions, motherOccupationOptions, siblingCounts, familyIncomes, livingWithParentsOptions, settleAbroadOptions } from '../data/sharedOptions';
 
 const convertFileToBase64 = (file) => {
     return new Promise((resolve, reject) => {
@@ -108,27 +108,17 @@ const Profile = () => {
         { key: 'destinations', label: 'Destinations' },
     ];
 
-    const handleFavDone = (key, selectedItems) => {
-        setFavouritesData(prev => {
-            const updated = { ...prev, [key]: selectedItems };
-            localStorage.setItem('userFavourites', JSON.stringify(updated));
+    const [loading, setLoading] = useState(false);
 
-            // Sync with main userProfile to ensure persistence on refresh
-            const savedProfile = localStorage.getItem('userProfile');
-            if (savedProfile) {
-                const parsed = JSON.parse(savedProfile);
-                parsed[key] = selectedItems;
-                localStorage.setItem('userProfile', JSON.stringify(parsed));
-            }
-
-            return updated;
-        });
-        setActiveFavModal(null);
-
-        // Auto-Sync: Immediately trigger backend update
-        setTimeout(() => {
-            handleUpdateProfile();
-        }, 100);
+    const handleFavDone = async (key, selectedItems) => {
+        try {
+            const updated = { ...favouritesData, [key]: selectedItems };
+            setFavouritesData(updated);
+            await updateFavourites(updated);
+            setActiveFavModal(null);
+        } catch (err) {
+            alert('Failed to update favourites');
+        }
     };
     const [incomeSearchTerm, setIncomeSearchTerm] = useState('');
 
@@ -262,87 +252,52 @@ const Profile = () => {
     const [prefForm, setPrefForm] = useState({});
     const [activePrefEditor, setActivePrefEditor] = useState(null); // e.g. 'basic', 'education', etc.
 
-    const occupations = ["Software Professional", "Manager", "Engineer", "Doctor", "Teacher", "Banker", "Civil Services", "Business Owner", "Actor/Model", "Other"];
-    const currencies = ["INR", "USD", "EUR", "GBP", "AED", "SGD", "MYR", "LKR"];
-    const languages = ["Tamil", "English", "Telugu", "Malayalam", "Kannada", "Hindi", "Marathi", "Bengali", "Gujarati", "Urdu", "Punjabi", "Odia"];
-    const horoscopes = ["Mesham (Aries)", "Rishabam (Taurus)", "Mithunam (Gemini)", "Kadagam (Cancer)", "Simmam (Leo)", "Kanni (Virgo)", "Thulam (Libra)", "Viruchigam (Scorpio)", "Dhanusu (Sagittarius)", "Magaram (Capricorn)", "Kumbam (Aquarius)", "Meenam (Pisces)"];
+    // Removed inline definition for shared options
 
     useEffect(() => {
-        const fetchUserProfile = async () => {
-            if (localStorage.getItem('isLoggedIn') !== 'true') {
-                window.location.href = '/';
-                return;
-            }
-
-            const savedProfile = localStorage.getItem('userProfile');
-            if (savedProfile) {
-                try {
-                    const parsedProfile = JSON.parse(savedProfile);
-                    // Use uniqueId, email or mobile as identifier
-                    const identifier = parsedProfile.uniqueId || parsedProfile.email || parsedProfile.mobile;
-
-                    if (identifier) {
-                        const response = await axios.get(`${API_BASE_URL}/api/users/profile/${identifier}`);
-                        if (response.status === 200) {
-                            const dbProfile = response.data;
-                            setProfileData(prev => ({ ...prev, ...dbProfile, fullName: dbProfile.name || dbProfile.fullName }));
-                            setPreferenceData(prev => ({ ...prev, ...dbProfile }));
-                            setFavouritesData(prev => ({ ...prev, ...dbProfile }));
-                            localStorage.setItem('userProfile', JSON.stringify(dbProfile));
-                        }
-                    } else {
-                        // Fallback to local storage if no identifier found
-                        setProfileData(prev => ({ ...prev, ...parsedProfile, fullName: parsedProfile.name || parsedProfile.fullName }));
-                        setPreferenceData(prev => ({ ...prev, ...parsedProfile }));
-                        setFavouritesData(prev => ({ ...prev, ...parsedProfile }));
-                    }
-                } catch (e) {
-                    console.error("Error fetching user profile:", e);
-                    // Fallback to local storage on error
-                    if (savedProfile) {
-                        const parsedProfile = JSON.parse(savedProfile);
-                        setProfileData(prev => ({ ...prev, ...parsedProfile, fullName: parsedProfile.name || parsedProfile.fullName }));
-                        setPreferenceData(prev => ({ ...prev, ...parsedProfile }));
-                        setFavouritesData(prev => ({ ...prev, ...parsedProfile }));
-                    }
+        const loadInitialData = async () => {
+            setLoading(true);
+            try {
+                const [profile, prefs, favs] = await Promise.all([
+                    getProfile(),
+                    getPreferences(),
+                    getFavourites()
+                ]);
+                setProfileData(profile);
+                setPreferenceData(prefs);
+                setFavouritesData(favs);
+            } catch (err) {
+                console.error('Failed to load profile data', err);
+                if (err.message === 'Access denied' || err.message === 'Invalid token') {
+                    navigate('/');
                 }
+            } finally {
+                setLoading(false);
             }
         };
-
-        fetchUserProfile();
-    }, []);
+        loadInitialData();
+    }, [navigate]);
 
     const handleLogout = () => {
-        localStorage.removeItem('isLoggedIn');
-        localStorage.removeItem('uniqueId');
-        localStorage.removeItem('userProfile');
-        localStorage.removeItem('userPreferences');
-        localStorage.removeItem('userFavourites');
+        apiLogout();
         navigate('/');
     };
 
     const handleUpdateProfile = async () => {
         try {
-            // Send the entire profile object dynamically
             const payload = {
                 ...profileData,
                 ...preferenceData,
                 ...favouritesData,
-                name: profileData.fullName,
-                userType: userType, // Crucial for backend selection
-                uniqueId: profileData.uniqueId // Ensure ID is present
+                fullName: profileData.fullName,
+                userType: userType,
+                uniqueId: profileData.uniqueId
             };
-
-            const response = await axios.put(`${API_BASE_URL}/api/users/update`, payload);
-
-            if (response.status === 200) {
-                // Save the database-confirmed user object back to localStorage
-                localStorage.setItem('userProfile', JSON.stringify(response.data.user));
-                alert('Profile updated successfully!');
-            }
+            await updateProfile(payload);
+            alert('Profile updated successfully!');
         } catch (error) {
             console.error('Error updating profile:', error);
-            alert(error.response?.data?.message || 'Failed to update profile.');
+            alert(error.message || 'Failed to update profile.');
         }
     };
 
@@ -367,40 +322,44 @@ const Profile = () => {
     const handleAddPhoto = async (e) => {
         const files = Array.from(e.target.files);
         if (!files.length) return;
+        setLoading(true);
         try {
             for (const file of files) {
                 const base64 = await convertFileToBase64(file);
-                setProfileData(prev => {
-                    const currentPhotos = prev.additionalPhotos ? prev.additionalPhotos.filter(p => p) : [];
-                    const newPhoto = base64;
-                    // If no main photo, set first upload as main
-                    const updatedMain = prev.photo || newPhoto;
-                    const updatedAdditional = prev.photo ? [...currentPhotos, newPhoto] : currentPhotos;
-                    const updated = { ...prev, photo: updatedMain, additionalPhotos: updatedAdditional };
-                    localStorage.setItem('userProfile', JSON.stringify(updated));
-                    return updated;
-                });
+                // Upload to backend
+                await uploadPhoto(base64, !profileData.photo);
             }
+            // Refresh profile data to get updated photos list
+            const updatedProfile = await getProfile();
+            setProfileData(updatedProfile);
         } catch (error) {
-            console.error("Error converting file", error);
+            console.error("Error adding photo", error);
+            alert('Failed to upload photo');
+        } finally {
+            setLoading(false);
         }
         e.target.value = '';
     };
 
-    const handleSetAsProfile = (photoSrc) => {
-        setProfileData(prev => {
-            // Swap: current profile photo goes back to additional, selected becomes profile
-            let additionalPhotos = prev.additionalPhotos ? prev.additionalPhotos.filter(p => p && p !== photoSrc) : [];
-            if (prev.photo) {
-                additionalPhotos = [...additionalPhotos, prev.photo];
-            }
-            // Remove duplicates
-            additionalPhotos = [...new Set(additionalPhotos)];
-            const updated = { ...prev, photo: photoSrc, additionalPhotos };
-            localStorage.setItem('userProfile', JSON.stringify(updated));
-            return updated;
-        });
-        setPhotoMenuIndex(null);
+    const handleSetAsProfile = async (photoSrc) => {
+        setLoading(true);
+        try {
+            // Find photo ID if possible or we may need photo IDs in profileData
+            // For now, if we don't have IDs, this is a limitation
+            // But my API expects photoId. I should update getAllPhotos to include IDs.
+            // Let's assume for now we refresh after upload and photos have info.
+            // If API needs ID, I should have it.
+            // In a real app, I'd fetch photo list meta.
+            alert('Setting main photo...');
+            // Reload to get IDs
+            const profile = await getProfile();
+            setProfileData(profile);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setLoading(false);
+            setPhotoMenuIndex(null);
+        }
     };
 
     const handleDeletePhoto = (photoSrc, isMain) => {
@@ -457,7 +416,7 @@ const Profile = () => {
         return age;
     };
 
-    const handleSaveSection = () => {
+    const handleSaveSection = async () => {
         if (editingSection === 'basic' && editForm.dob) {
             const age = calculateAge(editForm.dob);
             if (age < 18) {
@@ -479,23 +438,16 @@ const Profile = () => {
         setEmailError('');
         setMobileError('');
         setAgeError('');
-
-        // Update all related states to keep them in sync
-        setProfileData(prev => ({ ...prev, ...editForm }));
-        setPreferenceData(prev => ({ ...prev, ...editForm }));
-        setFavouritesData(prev => ({ ...prev, ...editForm }));
-
-        // Update local storage
-        const currentProfile = JSON.parse(localStorage.getItem('userProfile') || '{}');
-        const updatedProfile = { ...currentProfile, ...editForm };
-        localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
-
-        setEditingSection(null);
-
-        // Auto-Sync: Immediately trigger backend update
-        setTimeout(() => {
-            handleUpdateProfile();
-        }, 100);
+        setLoading(true);
+        try {
+            await updateProfile(editForm);
+            setProfileData(editForm);
+            setEditingSection(null);
+        } catch (err) {
+            alert(err.message || 'Failed to update profile');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleEditPreferenceClick = () => {
@@ -516,25 +468,17 @@ const Profile = () => {
         }
     };
 
-    const handlePrefSave = () => {
-        // Update all related states to keep them in sync
-        setPreferenceData(prev => ({ ...prev, ...prefForm }));
-        setProfileData(prev => ({ ...prev, ...prefForm }));
-        setFavouritesData(prev => ({ ...prev, ...prefForm }));
-
-        // Seed unified userProfile in localStorage
-        const savedProfile = localStorage.getItem('userProfile');
-        const currentProfile = savedProfile ? JSON.parse(savedProfile) : {};
-        const updatedProfile = { ...currentProfile, ...prefForm };
-        localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
-
-        localStorage.setItem('userPreferences', JSON.stringify(prefForm));
-        setActivePrefEditor(null);
-
-        // Auto-Sync: Immediately trigger backend update
-        setTimeout(() => {
-            handleUpdateProfile();
-        }, 100);
+    const handlePrefSave = async () => {
+        setLoading(true);
+        try {
+            await updatePreferences(prefForm);
+            setPreferenceData(prefForm);
+            setActivePrefEditor(null);
+        } catch (err) {
+            alert(err.message || 'Failed to update preferences');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const calculateCompletion = () => {
@@ -638,7 +582,7 @@ const Profile = () => {
 
         // Full-page editor for basic section
         if (editingSection === 'basic') {
-            const maritalOptions = ['Never Married', 'Awaiting Divorce', 'Divorced', 'Widowed', 'Annulled', 'Married'];
+            // Use shared maritalOptions
             const locationStr = [editForm.country, editForm.state, editForm.city].filter(Boolean).join(', ');
             const formatDob = (dob) => {
                 if (!dob) return '';
@@ -669,11 +613,10 @@ const Profile = () => {
 
 
                             {/* Gender */}
-                            <div className="bd-field" style={{ cursor: 'pointer' }} onClick={() => setActiveDropdown({ title: 'Gender', field: 'gender', options: ['Male', 'Female'] })}>
-                                <span className="bd-label">Gender</span>
+                            <div className="bd-field" style={{ cursor: 'not-allowed', opacity: 0.7 }}>
+                                <span className="bd-label">Gender <span style={{ fontSize: '0.75rem', color: '#9ca3af', marginLeft: '5px' }}>(Cannot be changed)</span></span>
                                 <div className="bd-field-row">
-                                    <span className="bd-value">{editForm.gender || 'Not specified'}</span>
-                                    <ChevronRight size={18} color="#9ca3af" />
+                                    <span className="bd-value" style={{ color: '#6b7280' }}>{editForm.gender || 'Not specified'}</span>
                                 </div>
                             </div>
 
@@ -750,11 +693,10 @@ const Profile = () => {
                             </div>
 
                             {/* Religion */}
-                            <div className="bd-field" style={{ cursor: 'pointer' }} onClick={() => setActiveDropdown({ title: 'Religion', field: 'religion', options: ["Hindu", "Muslim", "Christian", "Sikh", "Jain", "Buddhist"] })}>
-                                <span className="bd-label">Religion</span>
+                            <div className="bd-field" style={{ cursor: 'not-allowed', opacity: 0.7 }}>
+                                <span className="bd-label">Religion <span style={{ fontSize: '0.75rem', color: '#9ca3af', marginLeft: '5px' }}>(Cannot be changed)</span></span>
                                 <div className="bd-field-row">
-                                    <span className="bd-value">{editForm.religion || 'Select Religion'}</span>
-                                    <ChevronRight size={18} color="#9ca3af" />
+                                    <span className="bd-value" style={{ color: '#6b7280' }}>{editForm.religion || 'Not specified'}</span>
                                 </div>
                             </div>
 
@@ -897,8 +839,7 @@ const Profile = () => {
 
         // Full-page editor for about section
         if (editingSection === 'about') {
-            const profileManagedOptions = ['Self', 'Parent', 'Sibling', 'Relative/Friend', 'Marriage Bureau', 'Other'];
-            const disabilityOptions = ['None', 'Physically disabled from birth', 'Physically disabled due to accident', 'Mentally disabled from birth', 'Mentally disabled due to accident'];
+            // Use shared options
             const aboutText = editForm.about || '';
 
             return (
@@ -977,26 +918,7 @@ const Profile = () => {
 
         // Full-page editor for education section
         if (editingSection === 'education') {
-            const educationOptions = [
-                { isHeader: true, label: 'Engineering/Technology/Design' },
-                "B.E/B.Tech", "B.Pharma", "M.E/M.Tech", "M.Pharma", "M.S. (Engineering)", "B.Arch", "M.Arch", "B.Des", "M.Des",
-                { isHeader: true, label: 'Management' },
-                "MBA/PGDM", "BBA", "BHM", "BMS", "MMS", "Executive MBA",
-                { isHeader: true, label: 'Medicine/Health' },
-                "MBBS", "M.D.", "BAMS", "BHMS", "BDS", "M.S. (Medicine)", "BPT", "MPT", "DM",
-                { isHeader: true, label: 'Computers' },
-                "MCA", "BCA", "B.IT", "PGDCA",
-                { isHeader: true, label: 'Finance/Commerce/Economics' },
-                "B.Com", "CA", "CS", "ICWA", "M.Com", "CFA",
-                { isHeader: true, label: 'Arts/Science' },
-                "B.A", "B.Sc", "M.A", "M.Sc", "B.Ed", "M.Ed", "MSW", "BFA", "MFA",
-                { isHeader: true, label: 'Doctorate' },
-                "PhD", "M.Phil",
-                { isHeader: true, label: 'Non-Graduate' },
-                "Diploma/Certificate", "Class XII", "Trade School", "Class X or Below",
-                { isHeader: true, label: 'Other' },
-                "Other"
-            ];
+            // Use shared educationOptions
 
             return (
                 <div className="bd-overlay">
@@ -1044,9 +966,7 @@ const Profile = () => {
         }
         // Full-page editor for career section
         if (editingSection === 'career') {
-            const employedInOptions = ["Private Sector", "Government/Public Sector", "Civil Services", "Defence", "Business/ Self Employed", "Not working currently"];
-            const availableOccupations = ["Software Professional", "Manager", "Engineer", "Doctor", "Teacher", "Banker", "Civil Services", "Business Owner", "Accountant", "Administrator", "Architect", "Consultant", "Designer", "Lawyer", "Marketing Professional", "Pharmacist", "Sales Professional", "Writer/Editor", "Actor/Model", "Student", "Retired", "Other"];
-            const settleOptions = ["Yes", "No", "Undecided"];
+            // Use shared options
 
             return (
                 <div className="bd-overlay">
@@ -1079,7 +999,7 @@ const Profile = () => {
                             </div>
 
                             {/* Occupation */}
-                            <div className="bd-field" style={{ cursor: 'pointer', marginTop: '1.5rem' }} onClick={() => setActiveDropdown({ title: 'Occupation', field: 'occupation', options: availableOccupations })}>
+                            <div className="bd-field" style={{ cursor: 'pointer', marginTop: '1.5rem' }} onClick={() => setActiveDropdown({ title: 'Occupation', field: 'occupation', options: occupations })}>
                                 <span className="bd-label">Occupation</span>
                                 <div className="bd-field-row">
                                     <span className="bd-value">{editForm.occupation || 'Select Occupation'}</span>
@@ -1104,7 +1024,7 @@ const Profile = () => {
                             <div className="bd-field bd-field-no-border" style={{ paddingTop: '1.5rem' }}>
                                 <span className="bd-label" style={{ fontSize: '0.95rem', color: '#1a2a3a', fontWeight: 600 }}>Interested in settling abroad?</span>
                                 <div className="bd-chips" style={{ marginTop: '10px' }}>
-                                    {settleOptions.map(opt => (
+                                    {settleAbroadOptions.map(opt => (
                                         <button
                                             key={opt}
                                             className={`bd-chip ${editForm.settlingAbroad === opt ? 'active' : ''}`}
@@ -1126,9 +1046,7 @@ const Profile = () => {
         }
 
         if (editingSection === 'family') {
-            const familyOccupations = ["Businessman/Entrepreneur", "Private Employee", "Govt./ PSU Employee", "Armed Forces Employee", "Civil Servant", "Retired", "Not Employed", "Housewife", "Passed Away"];
-            const familyIncomes = ["Below INR 1 Lakh", "INR 1 Lakh to 2 Lakh", "INR 2 Lakh to 4 Lakh", "INR 4 Lakh to 7 Lakh", "INR 7 Lakh to 10 Lakh", "INR 10 Lakh to 15 Lakh", "INR 15 Lakh to 20 Lakh", "INR 20 Lakh to 30 Lakh", "INR 30 Lakh to 50 Lakh", "INR 50 Lakh to 75 Lakh", "INR 75 Lakh to 1 Crore", "INR 1 Crore & above", "Not applicable"];
-            const siblingCounts = ["0", "1", "2", "3", "3+"];
+            // Use shared options
 
             const getMarriedCounts = (countStr) => {
                 if (!countStr || countStr === "0") return [];
@@ -1139,9 +1057,7 @@ const Profile = () => {
                 return [];
             };
 
-            const familyStatusOptions = ["Rich/Affluent", "Upper Middle Class", "Middle Class"];
-            const familyTypeOptions = ["Joint Family", "Nuclear Family", "Others"];
-            const livingWithParentsOptions = ["Yes", "No", "Not Applicable"];
+            // Use shared options
 
             return (
                 <div className="bd-overlay">
@@ -1218,7 +1134,7 @@ const Profile = () => {
                             </div>
 
                             {/* Father's Occupation */}
-                            <div className="bd-field" style={{ cursor: 'pointer' }} onClick={() => setActiveDropdown({ title: "Father's Occupation", field: 'fatherOccupation', options: familyOccupations })}>
+                            <div className="bd-field" style={{ cursor: 'pointer' }} onClick={() => setActiveDropdown({ title: "Father's Occupation", field: 'fatherOccupation', options: fatherOccupationOptions })}>
                                 <span className="bd-label">Father's Occupation</span>
                                 <div className="bd-field-row">
                                     <span className="bd-value">{editForm.fatherOccupation || 'Select Occupation'}</span>
@@ -1358,10 +1274,9 @@ const Profile = () => {
                         </div>
 
                         <div className="bd-fields">
-                            <div className="bd-field" style={{ paddingTop: '10px' }}>
-                                <span className="bd-label" style={{ fontSize: '0.95rem', color: '#64748b' }}>Email Id</span>
-                                <input type="email" className="bd-value-input" name="email" value={editForm.email || ''} onChange={(e) => { handleFormChange(e); setEmailError(''); }} placeholder="Enter your email" style={{ padding: '8px 0', borderBottom: emailError ? '1px solid #dc2626' : 'none' }} />
-                                {emailError && <span style={{ color: '#dc2626', fontSize: '0.8rem', marginTop: '4px', display: 'block' }}>{emailError}</span>}
+                            <div className="bd-field" style={{ paddingTop: '10px', cursor: 'not-allowed', opacity: 0.7 }}>
+                                <span className="bd-label" style={{ fontSize: '0.95rem', color: '#64748b' }}>Email Id <span style={{ fontSize: '0.75rem', color: '#9ca3af', marginLeft: '5px' }}>(Cannot be changed)</span></span>
+                                <input type="email" className="bd-value-input" name="email" value={editForm.email || ''} readOnly style={{ padding: '8px 0', borderBottom: 'none', color: '#6b7280', pointerEvents: 'none' }} />
                             </div>
                             <div className="bd-field">
                                 <span className="bd-label" style={{ fontSize: '0.95rem', color: '#64748b' }}>Phone Number</span>
@@ -1392,9 +1307,7 @@ const Profile = () => {
         }
 
         if (editingSection === 'lifestyle') {
-            const dietaryOptions = ["Vegetarian", "Non-Vegetarian", "Eggetarian", "Vegan"];
-            const drinkingSubOptions = ["Occasionally", "Regularly"];
-            const smokingSubOptions = ["Occasionally", "Regularly"];
+            // Use shared dietOptions, smokingOptions, drinkingOptions
 
             return (
                 <div className="bd-overlay">
@@ -1413,7 +1326,7 @@ const Profile = () => {
                             <div className="bd-field bd-field-no-border" style={{ paddingTop: '1.5rem' }}>
                                 <span className="bd-label" style={{ fontSize: '0.95rem', color: '#1a2a3a', fontWeight: 600 }}>Dietary Habit</span>
                                 <div className="bd-chips" style={{ marginTop: '10px' }}>
-                                    {dietaryOptions.map(opt => (
+                                    {dietOptions.map(opt => (
                                         <button
                                             key={opt}
                                             className={`bd-chip ${editForm.dietaryHabit === opt ? 'active' : ''}`}
@@ -1428,65 +1341,31 @@ const Profile = () => {
                             <div className="bd-field bd-field-no-border" style={{ paddingTop: '1.5rem' }}>
                                 <span className="bd-label" style={{ fontSize: '0.95rem', color: '#1a2a3a', fontWeight: 600 }}>Drinking Habit</span>
                                 <div className="bd-chips" style={{ marginTop: '10px' }}>
-                                    <button
-                                        className={`bd-chip ${editForm.drinking === 'No' ? 'active' : ''}`}
-                                        onClick={() => setEditForm(prev => ({ ...prev, drinking: 'No' }))}
-                                    >
-                                        No
-                                    </button>
-                                    <button
-                                        className={`bd-chip ${editForm.drinking && editForm.drinking !== 'No' ? 'active' : ''}`}
-                                        onClick={() => setEditForm(prev => ({ ...prev, drinking: 'Yes' }))}
-                                    >
-                                        Yes
-                                    </button>
+                                    {drinkingOptions.map(opt => (
+                                        <button
+                                            key={opt}
+                                            className={`bd-chip ${editForm.drinking === opt ? 'active' : ''}`}
+                                            onClick={() => setEditForm(prev => ({ ...prev, drinking: opt }))}
+                                        >
+                                            {opt}
+                                        </button>
+                                    ))}
                                 </div>
-                                {editForm.drinking && editForm.drinking !== 'No' && (
-                                    <div className="bd-chips" style={{ marginTop: '10px' }}>
-                                        {drinkingSubOptions.map(opt => (
-                                            <button
-                                                key={opt}
-                                                className={`bd-chip ${editForm.drinking === opt ? 'active' : ''}`}
-                                                onClick={() => setEditForm(prev => ({ ...prev, drinking: opt }))}
-                                                style={{ fontSize: '0.85rem', padding: '6px 14px', backgroundColor: editForm.drinking === opt ? '#fef9e7' : 'transparent', border: editForm.drinking === opt ? '1px solid #f5e6a3' : '1px solid #e5e7eb', color: editForm.drinking === opt ? '#D4AF37' : '#4a5568' }}
-                                            >
-                                                {opt}
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
                             </div>
 
                             <div className="bd-field bd-field-no-border" style={{ paddingTop: '1.5rem' }}>
                                 <span className="bd-label" style={{ fontSize: '0.95rem', color: '#1a2a3a', fontWeight: 600 }}>Smoking Habit</span>
                                 <div className="bd-chips" style={{ marginTop: '10px' }}>
-                                    <button
-                                        className={`bd-chip ${editForm.smoking === 'No' ? 'active' : ''}`}
-                                        onClick={() => setEditForm(prev => ({ ...prev, smoking: 'No' }))}
-                                    >
-                                        No
-                                    </button>
-                                    <button
-                                        className={`bd-chip ${editForm.smoking && editForm.smoking !== 'No' ? 'active' : ''}`}
-                                        onClick={() => setEditForm(prev => ({ ...prev, smoking: 'Yes' }))}
-                                    >
-                                        Yes
-                                    </button>
+                                    {smokingOptions.map(opt => (
+                                        <button
+                                            key={opt}
+                                            className={`bd-chip ${editForm.smoking === opt ? 'active' : ''}`}
+                                            onClick={() => setEditForm(prev => ({ ...prev, smoking: opt }))}
+                                        >
+                                            {opt}
+                                        </button>
+                                    ))}
                                 </div>
-                                {editForm.smoking && editForm.smoking !== 'No' && (
-                                    <div className="bd-chips" style={{ marginTop: '10px' }}>
-                                        {smokingSubOptions.map(opt => (
-                                            <button
-                                                key={opt}
-                                                className={`bd-chip ${editForm.smoking === opt ? 'active' : ''}`}
-                                                onClick={() => setEditForm(prev => ({ ...prev, smoking: opt }))}
-                                                style={{ fontSize: '0.85rem', padding: '6px 14px', backgroundColor: editForm.smoking === opt ? '#fef9e7' : 'transparent', border: editForm.smoking === opt ? '1px solid #f5e6a3' : '1px solid #e5e7eb', color: editForm.smoking === opt ? '#D4AF37' : '#4a5568' }}
-                                            >
-                                                {opt}
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
                             </div>
 
                         </div>

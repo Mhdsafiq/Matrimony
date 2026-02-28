@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import { User, MapPin, Briefcase, Globe2, Heart, Calendar, Ruler, Languages, Clock, ArrowLeft, Images } from 'lucide-react';
+import { User, MapPin, Briefcase, Globe2, Heart, Calendar, Ruler, Languages, Clock, ArrowLeft, Images, Loader2 } from 'lucide-react';
+import { getProfile, getProfileById, getPreferences, getFavourites } from '../services/api';
 import './ProfileView.css';
 
 const ProfileView = () => {
     const navigate = useNavigate();
+    const { uniqueId: paramId } = useParams();
     const [previewTab, setPreviewTab] = useState('about');
     const [profileData, setProfileData] = useState({});
     const [preferenceData, setPreferenceData] = useState({});
     const [favouritesData, setFavouritesData] = useState({});
+    const [loading, setLoading] = useState(false);
 
     const favouritesCategories = [
         { key: 'hobbies', label: 'Hobbies' },
@@ -22,21 +25,40 @@ const ProfileView = () => {
     ];
 
     useEffect(() => {
-        const savedProfile = localStorage.getItem('userProfile');
-        if (savedProfile) {
-            try { setProfileData(JSON.parse(savedProfile)); } catch (e) { }
-        }
-        const savedPrefs = localStorage.getItem('userPreferences');
-        if (savedPrefs) {
-            try { setPreferenceData(JSON.parse(savedPrefs)); } catch (e) { }
-        }
-        const savedFavs = localStorage.getItem('userFavourites');
-        if (savedFavs) {
-            try { setFavouritesData(JSON.parse(savedFavs)); } catch (e) { }
-        }
-    }, []);
+        const loadData = async () => {
+            setLoading(true);
+            try {
+                if (paramId) {
+                    // Viewing someone else
+                    const data = await getProfileById(paramId);
+                    setProfileData(data.profile || data);
+                    setPreferenceData(data.preferences || {});
+                    setFavouritesData(data.favourites || {});
+                } else {
+                    // Viewing own profile preview
+                    const [profile, prefs, favs] = await Promise.all([
+                        getProfile(),
+                        getPreferences(),
+                        getFavourites()
+                    ]);
+                    setProfileData(profile);
+                    setPreferenceData(prefs);
+                    setFavouritesData(favs);
+                }
+            } catch (err) {
+                console.error('Failed to load profile view', err);
+                if (err.message === 'Profile not found') {
+                    alert('Profile not found');
+                    navigate('/home');
+                }
+            } finally {
+                setLoading(false);
+            }
+        };
+        loadData();
+    }, [paramId, navigate]);
 
-    const uniqueId = localStorage.getItem('uniqueId') || 'MEM-12345';
+    const myUniqueId = localStorage.getItem('uniqueId') || '';
 
     const calculateAge = (dob) => {
         const birthDate = new Date(dob);
@@ -112,98 +134,112 @@ const ProfileView = () => {
 
             <div className="pv-container">
 
-                <button type="button" className="pv-back-btn" onClick={() => navigate('/profile')} aria-label="Go back">
+                <button type="button" className="pv-back-btn" onClick={() => navigate(-1)} aria-label="Go back">
                     <ArrowLeft size={22} />
                 </button>
 
                 <div className="pv-hero">
-                    {/* Photo block */}
-                    <div className="pv-photo-block">
-                        {profileData.photo ? (
-                            <img src={profileData.photo} alt={profileData.fullName || 'Profile'} />
-                        ) : (
-                            <div className="pv-photo-placeholder">
-                                <User size={88} color="#9ca3af" />
-                            </div>
-                        )}
+                    {loading ? (
+                        <div className="pv-loading-hero">
+                            <Loader2 className="animate-spin" size={48} />
+                        </div>
+                    ) : (
+                        <>
+                            {/* Photo block */}
+                            <div className="pv-photo-block">
+                                {profileData.photo ? (
+                                    <img src={profileData.photo} alt={profileData.fullName || 'Profile'} />
+                                ) : (
+                                    <div className="pv-photo-placeholder">
+                                        <User size={88} color="#9ca3af" />
+                                    </div>
+                                )}
 
-                        {/* Photo count badge */}
-                        {totalPhotos > 0 && (
-                            <div className="pv-photo-count-badge">
-                                <Images size={16} />
-                                <span>{totalPhotos}</span>
+                                {/* Photo count badge */}
+                                {totalPhotos > 0 && (
+                                    <div className="pv-photo-count-badge">
+                                        <Images size={16} />
+                                        <span>{totalPhotos}</span>
+                                    </div>
+                                )}
                             </div>
-                        )}
-                    </div>
 
-                    {/* Name overlay at bottom of hero */}
-                    <div className="pv-hero-info">
-                        <h2 className="pv-name">{profileData.fullName || 'Member Name'}{previewAge ? `, ${previewAge}` : ''}</h2>
-                        <p className="pv-id">ID - {profileData.uniqueId || uniqueId}</p>
-                        <p className="pv-managed">{profileData.gender === 'Female' ? 'Her' : 'His'} profile is managed by {profileData.profileFor || 'Self'}</p>
-                    </div>
+                            {/* Name overlay at bottom of hero */}
+                            <div className="pv-hero-info">
+                                <h2 className="pv-name">{profileData.fullName || 'Member Name'}{previewAge ? `, ${previewAge}` : ''}</h2>
+                                <p className="pv-id">ID - {profileData.uniqueId || myUniqueId}</p>
+                                <p className="pv-managed">{profileData.gender === 'Female' ? 'Her' : 'His'} profile is managed by {profileData.profileFor || 'Self'}</p>
+                            </div>
+                        </>
+                    )}
 
                     {/* Tabs */}
                     <div className="pv-tabs">
-                        <button type="button" className={`pv-tab ${previewTab === 'about' ? 'active' : ''}`} onClick={() => setPreviewTab('about')}>About Me</button>
+                        <button type="button" className={`pv-tab ${previewTab === 'about' ? 'active' : ''}`} onClick={() => setPreviewTab('about')}>About {paramId && paramId !== myUniqueId ? (profileData.gender === 'Female' ? 'Her' : 'Him') : 'Me'}</button>
                         <button type="button" className={`pv-tab ${previewTab === 'family' ? 'active' : ''}`} onClick={() => setPreviewTab('family')}>Family</button>
                         <button type="button" className={`pv-tab ${previewTab === 'looking' ? 'active' : ''}`} onClick={() => setPreviewTab('looking')}>Looking For</button>
                     </div>
                 </div>
 
                 <div className="pv-content">
-                    {previewTab === 'about' && (
-                        <>
-                            <div className="pv-quick-grid">
-                                <div className="pv-quick-item"><Ruler size={18} /><span>{profileData.height || 'Not specified'}</span></div>
-                                <div className="pv-quick-item"><MapPin size={18} /><span>{getLocationString()}</span></div>
-                                <div className="pv-quick-item"><Globe2 size={18} /><span>{previewReligionText}</span></div>
-                                <div className="pv-quick-item"><Briefcase size={18} /><span>{profileData.income || 'No Income'}</span></div>
-                                <div className="pv-quick-item"><Languages size={18} /><span>Mother tongue is {profileData.motherTongue || 'not specified'}</span></div>
-                                <div className="pv-quick-item">
-                                    <Heart size={18} />
-                                    <span>
-                                        {profileData.maritalStatus || 'Never Married'}
-                                        {profileData.maritalStatus && profileData.maritalStatus !== 'Never Married' && profileData.havingChildren === 'Yes' && profileData.numberOfChildren && (
-                                            ` • ${profileData.numberOfChildren} Children`
-                                        )}
-                                    </span>
+                    {loading ? (
+                        <div className="pv-loading-content">
+                            <p>Fetching profile details...</p>
+                        </div>
+                    ) : (
+                        previewTab === 'about' && (
+                            <>
+                                <div className="pv-quick-grid">
+                                    <div className="pv-quick-item"><Ruler size={18} /><span>{profileData.height || 'Not specified'}</span></div>
+                                    <div className="pv-quick-item"><MapPin size={18} /><span>{getLocationString()}</span></div>
+                                    <div className="pv-quick-item"><Globe2 size={18} /><span>{previewReligionText}</span></div>
+                                    <div className="pv-quick-item"><Briefcase size={18} /><span>{profileData.income || 'No Income'}</span></div>
+                                    <div className="pv-quick-item"><Languages size={18} /><span>Mother tongue is {profileData.motherTongue || 'not specified'}</span></div>
+                                    <div className="pv-quick-item">
+                                        <Heart size={18} />
+                                        <span>
+                                            {profileData.maritalStatus || 'Never Married'}
+                                            {profileData.maritalStatus && profileData.maritalStatus !== 'Never Married' && profileData.havingChildren === 'Yes' && profileData.numberOfChildren && (
+                                                ` • ${profileData.numberOfChildren} Children`
+                                            )}
+                                        </span>
+                                    </div>
+                                    <div className="pv-quick-item"><Calendar size={18} /><span>{previewDobText}</span></div>
+                                    {profileData.timeOfBirth && (
+                                        <div className="pv-quick-item"><Clock size={18} /><span>{profileData.timeOfBirth}</span></div>
+                                    )}
+                                    {profileData.placeOfBirth && (
+                                        <div className="pv-quick-item"><MapPin size={18} /><span>Born in {profileData.placeOfBirth}</span></div>
+                                    )}
                                 </div>
-                                <div className="pv-quick-item"><Calendar size={18} /><span>{previewDobText}</span></div>
-                                {profileData.timeOfBirth && (
-                                    <div className="pv-quick-item"><Clock size={18} /><span>{profileData.timeOfBirth}</span></div>
-                                )}
-                                {profileData.placeOfBirth && (
-                                    <div className="pv-quick-item"><MapPin size={18} /><span>Born in {profileData.placeOfBirth}</span></div>
-                                )}
-                            </div>
 
-                            <div className="pv-card">
-                                <h3>About {pronounObj}</h3>
-                                <p>{profileData.about || 'No description added yet.'}</p>
-                                {profileData.disability && profileData.disability !== 'None' && (
-                                    <p style={{ marginTop: '8px', fontSize: '0.9rem', color: '#4b5563' }}><strong>Disability:</strong> {profileData.disability}</p>
-                                )}
-                            </div>
+                                <div className="pv-card">
+                                    <h3>About {pronounObj}</h3>
+                                    <p>{profileData.about || 'No description added yet.'}</p>
+                                    {profileData.disability && profileData.disability !== 'None' && (
+                                        <p style={{ marginTop: '8px', fontSize: '0.9rem', color: '#4b5563' }}><strong>Disability:</strong> {profileData.disability}</p>
+                                    )}
+                                </div>
 
-                            <div className="pv-card">
-                                <h3>{pronounPossCap} Education</h3>
-                                <p>{profileData.education || 'Not specified'}</p>
-                                {profileData.ugCollege && <p style={{ marginTop: '4px', fontSize: '0.9rem', color: '#4b5563' }}><strong>College:</strong> {profileData.ugCollege}</p>}
-                                {profileData.schoolName && <p style={{ marginTop: '4px', fontSize: '0.9rem', color: '#4b5563' }}><strong>School:</strong> {profileData.schoolName}</p>}
-                            </div>
+                                <div className="pv-card">
+                                    <h3>{pronounPossCap} Education</h3>
+                                    <p>{profileData.education || 'Not specified'}</p>
+                                    {profileData.ugCollege && <p style={{ marginTop: '4px', fontSize: '0.9rem', color: '#4b5563' }}><strong>College:</strong> {profileData.ugCollege}</p>}
+                                    {profileData.schoolName && <p style={{ marginTop: '4px', fontSize: '0.9rem', color: '#4b5563' }}><strong>School:</strong> {profileData.schoolName}</p>}
+                                </div>
 
-                            <div className="pv-card">
-                                <h3>{pronounPossCap} Career</h3>
-                                <p><strong>Occupation:</strong> {profileData.occupation || 'Not specified'}</p>
-                                <p style={{ marginTop: '4px', fontSize: '0.9rem', color: '#4b5563' }}><strong>Employment Type:</strong> {profileData.employmentType || 'Not specified'}</p>
-                                {profileData.organizationName && <p style={{ marginTop: '4px', fontSize: '0.9rem', color: '#4b5563' }}><strong>Organization:</strong> {profileData.organizationName}</p>}
-                                {profileData.settlingAbroad && <p style={{ marginTop: '4px', fontSize: '0.9rem', color: '#4b5563' }}><strong>Interested in settling abroad?:</strong> {profileData.settlingAbroad}</p>}
-                            </div>
-                        </>
+                                <div className="pv-card">
+                                    <h3>{pronounPossCap} Career</h3>
+                                    <p><strong>Occupation:</strong> {profileData.occupation || 'Not specified'}</p>
+                                    <p style={{ marginTop: '4px', fontSize: '0.9rem', color: '#4b5563' }}><strong>Employment Type:</strong> {profileData.employmentType || 'Not specified'}</p>
+                                    {profileData.organizationName && <p style={{ marginTop: '4px', fontSize: '0.9rem', color: '#4b5563' }}><strong>Organization:</strong> {profileData.organizationName}</p>}
+                                    {profileData.settlingAbroad && <p style={{ marginTop: '4px', fontSize: '0.9rem', color: '#4b5563' }}><strong>Interested in settling abroad?:</strong> {profileData.settlingAbroad}</p>}
+                                </div>
+                            </>
+                        )
                     )}
 
-                    {previewTab === 'family' && (
+                    {!loading && previewTab === 'family' && (
                         <>
                             <div className="pv-card">
                                 <h3>{pronounPossCap} Family</h3>
@@ -237,7 +273,7 @@ const ProfileView = () => {
                         </>
                     )}
 
-                    {previewTab === 'looking' && (
+                    {!loading && previewTab === 'looking' && (
                         <>
                             <div className="pv-card">
                                 <h3>What {pronounSubj} is looking for...</h3>

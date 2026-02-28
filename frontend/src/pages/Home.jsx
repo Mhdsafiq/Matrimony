@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import { User, Camera, Star, Users, Edit2, Settings, HelpCircle, ChevronDown, Phone, MessageSquare, TrendingUp, Eye, LogOut, FileText, Briefcase, Heart, MapPin, GraduationCap, Utensils } from 'lucide-react';
-import API_BASE_URL from '../config';
+import { User, Camera, Star, Users, Edit2, Settings, HelpCircle, ChevronDown, Phone, MessageSquare, TrendingUp, Eye, LogOut, FileText, Briefcase, Heart, MapPin, GraduationCap, Utensils, Loader2 } from 'lucide-react';
+import { getProfile, logout as apiLogout } from '../services/api';
 import './Home.css';
 
 const Home = () => {
@@ -102,77 +102,62 @@ const Home = () => {
     },
   ];
 
+  const [loading, setLoading] = useState(false);
+
   useEffect(() => {
-    const fetchProfile = async () => {
-      const savedProfile = localStorage.getItem('userProfile');
-      if (savedProfile) {
-        try {
-          const parsed = JSON.parse(savedProfile);
+    const loadProfile = async () => {
+      setLoading(true);
+      try {
+        const parsed = await getProfile();
+        setProfileData(parsed);
 
-          // Seed initial display from localStorage
-          setProfileData(prev => ({ ...prev, ...parsed }));
+        // Seed initial display from localStorage
+        setProfileData(prev => ({ ...prev, ...parsed }));
 
-          // Use upstream granular completion logic
-          const allFields = [];
-          profileSections.forEach(sec => {
-            sec.fields.forEach(f => {
-              if (!allFields.includes(f)) allFields.push(f);
-            });
+        // Use upstream granular completion logic
+        const allFields = [];
+        profileSections.forEach(sec => {
+          sec.fields.forEach(f => {
+            if (!allFields.includes(f)) allFields.push(f);
           });
+        });
 
-          const calculateCompletion = (data) => {
-            let completed = 0;
-            allFields.forEach(field => {
-              const value = data[field];
-              if (value && value !== 'Not Specified' && value !== '') {
-                completed++;
-              }
-            });
-            return Math.round((completed / allFields.length) * 100);
-          };
-
-          setCompletionPercentage(calculateCompletion(parsed));
-
-          // Find incomplete sections
-          const updateIncomplete = (data) => {
-            const incomplete = profileSections.filter(sec => {
-              if (sec.fields.length === 0) return false; // always show partner prefs if needed
-              return sec.fields.some(field => {
-                const value = data[field];
-                return !value || value === 'Not Specified' || value === '';
-              });
-            });
-            setIncompleteItems(incomplete);
-          };
-          updateIncomplete(parsed);
-
-          // Fetch fresh data from backend to ensure accuracy (local change)
-          const identifier = parsed.uniqueId || parsed.email || parsed.mobile;
-          if (identifier) {
-            try {
-              const response = await fetch(`${API_BASE_URL}/api/users/profile/${identifier}`);
-              if (response.ok) {
-                const dbProfile = await response.json();
-                const updatedData = { ...parsed, ...dbProfile, fullName: dbProfile.name || dbProfile.fullName };
-                setProfileData(prev => ({ ...prev, ...updatedData }));
-                setCompletionPercentage(calculateCompletion(updatedData));
-                updateIncomplete(updatedData);
-                localStorage.setItem('userProfile', JSON.stringify(updatedData));
-              }
-            } catch (apiError) {
-              console.error("API error fetching profile in Home:", apiError);
+        const calculateCompletion = (data) => {
+          let completed = 0;
+          allFields.forEach(field => {
+            const value = data[field];
+            if (value && value !== 'Not Specified' && value !== '') {
+              completed++;
             }
-          }
-        } catch (e) {
-          console.error("Error parsing profile", e);
-        }
-      } else {
-        // No profile saved = everything incomplete
-        setIncompleteItems(profileSections.filter(s => s.fields.length > 0));
+          });
+          return Math.round((completed / (allFields.length || 1)) * 100);
+        };
+
+        setCompletionPercentage(calculateCompletion(parsed));
+
+        // Find incomplete sections
+        const incomplete = profileSections.filter(sec => {
+          if (sec.fields.length === 0) return false;
+          return sec.fields.some(field => {
+            const value = parsed[field];
+            return !value || value === 'Not Specified' || value === '';
+          });
+        });
+        setIncompleteItems(incomplete);
+      } catch (e) {
+        console.error("Error loading profile", e);
+        if (e.message.includes('Access denied')) navigate('/');
+      } finally {
+        setLoading(false);
       }
-      const uid = localStorage.getItem('uniqueId');
-      if (uid) setProfileData(prev => ({ ...prev, uniqueId: uid }));
-    }, []);
+    };
+    loadProfile();
+  }, [navigate]);
+
+  const handleLogout = () => {
+    apiLogout();
+    navigate('/');
+  };
 
   const handleQuickAction = (section) => {
     navigate('/profile', { state: section.navState });
@@ -211,7 +196,7 @@ const Home = () => {
             <div className="sidebar-menu-item" onClick={() => navigate('/profile', { state: { openPreferences: true } })}>
               <Settings size={16} /> Edit preferences
             </div>
-            <div className="sidebar-menu-item" style={{ color: '#D4AF37' }} onClick={() => { localStorage.removeItem('isLoggedIn'); localStorage.removeItem('uniqueId'); localStorage.removeItem('userProfile'); navigate('/'); }}>
+            <div className="sidebar-menu-item" style={{ color: '#D4AF37' }} onClick={handleLogout}>
               <LogOut size={16} /> Logout
             </div>
           </div>

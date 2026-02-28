@@ -24,6 +24,7 @@ function App() {
           {/* Protected Routes */}
           <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          <Route path="/profile/:uniqueId" element={<ProtectedRoute><ProfileView /></ProtectedRoute>} />
           <Route path="/search" element={<ProtectedRoute><Search /></ProtectedRoute>} />
           <Route path="/interests" element={<ProtectedRoute><Interests /></ProtectedRoute>} />
           <Route path="/profile-view" element={<ProtectedRoute><ProfileView /></ProtectedRoute>} />

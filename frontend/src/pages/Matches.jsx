@@ -1,17 +1,96 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import {
-    Users, Star, Eye, UserPlus, ChevronRight, User, Contact, UserSearch, Search,
-    MapPin, Image, Sparkles
+    Users, Star, Eye, UserPlus, ChevronRight, Contact, UserSearch, Search,
+    Image, Sparkles, Loader2, Heart, GraduationCap, Briefcase,
+    MessageCircle, X, Languages, MapPin
 } from 'lucide-react';
+import {
+    getMatches, getShortlistedProfiles, getViewedYou, getViewedByYou, getShortlistedYou,
+    sendInterest, shortlistProfile, ignoreProfile, getNearbyMatches, getHoroscopeMatches, getMatchesWithPhotos
+} from '../services/api';
 import './Matches.css';
 
 const Matches = () => {
     const navigate = useNavigate();
     const [activeCategory, setActiveCategory] = useState('your-matches');
-    const [viewEvents, setViewEvents] = useState([]);
+    const [profiles, setProfiles] = useState([]);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        loadCategoryData();
+    }, [activeCategory]);
+
+    const loadCategoryData = async () => {
+        setLoading(true);
+        try {
+            let data = [];
+            switch (activeCategory) {
+                case 'your-matches': data = await getMatches(); break;
+                case 'shortlisted-by-you': data = await getShortlistedProfiles(); break;
+                case 'viewed-you': data = await getViewedYou(); break;
+                case 'shortlisted-you': data = await getShortlistedYou(); break;
+                case 'viewed-by-you': data = await getViewedByYou(); break;
+                case 'nearby-matches': data = await getNearbyMatches(); break;
+                case 'matches-with-horoscope': data = await getHoroscopeMatches(); break;
+                case 'matches-with-photos': data = await getMatchesWithPhotos(); break;
+                default: data = [];
+            }
+            setProfiles(data);
+        } catch (err) {
+            console.error('Failed to load match data', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSendInterestAction = async (e, uniqueId) => {
+        e.stopPropagation();
+        try {
+            await sendInterest(uniqueId);
+            alert('Interest sent successfully.');
+        } catch (err) {
+            alert(err.message || 'Failed to send interest');
+        }
+    };
+
+    const handleShortlistAction = async (e, uniqueId) => {
+        e.stopPropagation();
+        try {
+            await shortlistProfile(uniqueId);
+            alert('You have shortlisted this profile successfully.');
+            // Only reload if we are on a list that might have changed
+            if (activeCategory === 'your-matches' || activeCategory === 'nearby-matches') {
+                // leave as is
+            } else {
+                loadCategoryData();
+            }
+        } catch (err) {
+            alert(err.message || 'Failed to shortlist');
+        }
+    };
+
+    const handleIgnoreAction = async (e, uniqueId) => {
+        e.stopPropagation();
+        if (window.confirm('Are you sure you want to ignore this profile? It will be hidden from your matches.')) {
+            // Optimistic update
+            setProfiles(prev => prev.filter(p => p.uniqueId !== uniqueId));
+            try {
+                await ignoreProfile(uniqueId);
+                alert('You have ignored this profile.');
+            } catch (err) {
+                alert(err.message || 'Failed to ignore profile');
+                loadCategoryData(); // revert
+            }
+        }
+    };
+
+    const handleChatAction = (e, uniqueId) => {
+        e.stopPropagation();
+        alert('Chat feature coming soon!');
+    };
 
     // Grouping the sidebar items as shown in the user's images
     const matchGroups = [
@@ -54,79 +133,106 @@ const Matches = () => {
     };
 
     const activeItem = getActiveItem();
-    const currentUserId = localStorage.getItem('uniqueId') || '';
-
-    useEffect(() => {
-        const events = JSON.parse(localStorage.getItem('profileViewEvents') || '[]');
-        setViewEvents(Array.isArray(events) ? events : []);
-    }, []);
-
-    const getLatestUniqueBy = (items, keyGetter) => {
-        const seen = new Set();
-        const latest = [];
-        items.forEach(item => {
-            const key = keyGetter(item);
-            if (!key || seen.has(key)) return;
-            seen.add(key);
-            latest.push(item);
-        });
-        return latest;
-    };
-
-    const viewedYouList = useMemo(() => {
-        if (!currentUserId) return [];
-        const filtered = viewEvents
-            .filter((event) => event?.type === 'profile_view' && event?.viewed?.uniqueId === currentUserId && event?.viewer?.uniqueId !== currentUserId)
-            .sort((a, b) => new Date(b.viewedAt) - new Date(a.viewedAt));
-        return getLatestUniqueBy(filtered, (event) => event.viewer?.uniqueId);
-    }, [viewEvents, currentUserId]);
-
-    const viewedByYouList = useMemo(() => {
-        if (!currentUserId) return [];
-        const filtered = viewEvents
-            .filter((event) => event?.type === 'profile_view' && event?.viewer?.uniqueId === currentUserId && event?.viewed?.uniqueId !== currentUserId)
-            .sort((a, b) => new Date(b.viewedAt) - new Date(a.viewedAt));
-        return getLatestUniqueBy(filtered, (event) => event.viewed?.uniqueId);
-    }, [viewEvents, currentUserId]);
-
-    const formatViewedTime = (iso) => {
-        if (!iso) return '';
-        const date = new Date(iso);
-        if (Number.isNaN(date.getTime())) return '';
-        return date.toLocaleString();
-    };
-
-    const renderProfileList = (records, mode) => (
-        <div className="viewed-list">
-            {records.map((event) => {
-                const person = mode === 'viewed-you' ? event.viewer : event.viewed;
-                const location = [person?.city, person?.state, person?.country].filter(Boolean).join(', ') || 'Location not specified';
-                return (
-                    <article className="viewed-card" key={event.id}>
-                        <div className="viewed-avatar">
-                            {person?.photo ? <img src={person.photo} alt={person.fullName || 'Member'} /> : <User size={22} />}
-                        </div>
-                        <div className="viewed-content">
-                            <h4>{person?.fullName || 'Member'}</h4>
-                            <p className="viewed-meta">ID - {person?.uniqueId || 'N/A'}</p>
-                            <p className="viewed-meta">{location}</p>
-                            <p className="viewed-time">Viewed on {formatViewedTime(event.viewedAt)}</p>
-                        </div>
-                    </article>
-                );
-            })}
-        </div>
-    );
-
-    const showViewedYou = activeCategory === 'viewed-you' && viewedYouList.length > 0;
-    const showViewedByYou = activeCategory === 'viewed-by-you' && viewedByYouList.length > 0;
-    const showEmpty = !(showViewedYou || showViewedByYou);
-
     const emptyTitle = activeCategory === 'viewed-you'
         ? 'No one has viewed your profile yet'
         : activeCategory === 'viewed-by-you'
             ? 'You have not viewed any profiles yet'
-            : 'You have no matches left';
+            : activeCategory === 'shortlisted-by-you'
+                ? 'Your shortlist is empty'
+                : 'You have no matches right now';
+
+    const renderList = () => {
+        if (loading) {
+            return (
+                <div className="loading-state">
+                    <Loader2 className="animate-spin" size={40} />
+                    <p>Loading matches...</p>
+                </div>
+            );
+        }
+
+        if (profiles.length === 0) {
+            return (
+                <div className="empty-state-wrapper">
+                    <div className="empty-illustration">
+                        <Users size={120} color="#cbd5e1" strokeWidth={1.5} fill="#e2e8f0" />
+                        <div className="search-overlay">
+                            <Search size={40} color="#1e293b" strokeWidth={2.5} />
+                        </div>
+                    </div>
+                    <h3 className="empty-title">{emptyTitle}</h3>
+                    {activeCategory === 'your-matches' && (
+                        <button className="change-pref-btn" onClick={() => navigate('/profile', { state: { openPreferences: true } })}>Change Preferences</button>
+                    )}
+                </div>
+            );
+        }
+
+        return (
+            <div className="match-results-list">
+                {profiles.map(p => (
+                    <div key={p.uniqueId} className="match-card" onClick={() => navigate(`/profile/${p.uniqueId}`)}>
+                        <div className="match-card-top">
+                            <div className="match-card-sidebar">
+                                {p.photo ? (
+                                    <img src={p.photo} alt={p.fullName} />
+                                ) : (
+                                    <div className="request-photo-overlay">
+                                        <button className="request-photo-btn">Request photo</button>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="match-card-main">
+                                <span className="active-today-label">Active Today</span>
+                                <h3 className="match-card-name">{p.fullName}, {p.age}</h3>
+                                <div className="match-card-basics">
+                                    {p.height} • {p.city || 'Location N/A'} • {p.religion}-{p.caste || p.sect || 'Community N/A'}
+                                </div>
+                                <div className="match-card-details-grid">
+                                    <div className="detail-item">
+                                        <Briefcase size={16} />
+                                        <span>{p.occupation || 'Profession N/A'}</span> • <span>{p.income || 'No Income'}</span>
+                                    </div>
+                                    <div className="detail-item">
+                                        <GraduationCap size={16} />
+                                        <span>{p.education || 'Education N/A'}</span>
+                                    </div>
+                                    <div className="detail-item">
+                                        <Heart size={16} />
+                                        <span>{p.maritalStatus || 'Never Married'}</span>
+                                    </div>
+                                    {p.motherTongue && (
+                                        <div className="detail-item">
+                                            <Languages size={16} />
+                                            <span>{p.motherTongue}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                        <div className="match-card-footer">
+                            <button className="card-action-btn" onClick={(e) => handleSendInterestAction(e, p.uniqueId)}>
+                                <Sparkles size={18} />
+                                Interest
+                            </button>
+                            <button className="card-action-btn" onClick={(e) => handleShortlistAction(e, p.uniqueId)}>
+                                <Star size={18} />
+                                Shortlist
+                            </button>
+                            <button className="card-action-btn" onClick={(e) => handleIgnoreAction(e, p.uniqueId)}>
+                                <X size={18} />
+                                Ignore
+                            </button>
+                            <button className="card-action-btn" onClick={(e) => handleChatAction(e, p.uniqueId)}>
+                                <MessageCircle size={18} />
+                                Chat
+                            </button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        );
+    };
 
     return (
         <div className="matches-page">
@@ -162,37 +268,13 @@ const Matches = () => {
 
                     {/* Main Content */}
                     <main className="matches-content">
-                        {!showEmpty && (
-                            <div className="content-header">
-                                <h2>{activeItem.label}</h2>
-                                <p>{activeItem.desc}</p>
-                            </div>
-                        )}
+                        <div className="content-header">
+                            <h2>{activeItem.label}</h2>
+                            <p>{activeItem.desc}</p>
+                        </div>
 
-                        <div className={`matches-body ${showEmpty ? 'empty-state' : ''}`}>
-                            {showViewedYou && renderProfileList(viewedYouList, 'viewed-you')}
-                            {showViewedByYou && renderProfileList(viewedByYouList, 'viewed-by-you')}
-
-                            {showEmpty && (
-                                <div className="empty-state-wrapper">
-                                    <div className="empty-illustration">
-                                        <Users size={120} color="#cbd5e1" strokeWidth={1.5} fill="#e2e8f0" />
-                                        <div className="search-overlay">
-                                            <Search size={40} color="#1e293b" strokeWidth={2.5} />
-                                        </div>
-                                    </div>
-                                    <h3 className="empty-title">{emptyTitle}</h3>
-                                    {activeCategory === 'your-matches' && (
-                                        <button className="change-pref-btn" onClick={() => navigate('/profile', { state: { openPreferences: true } })}>Change Preferences</button>
-                                    )}
-                                </div>
-                            )}
-                            {activeCategory === 'viewed-you' && viewedYouList.length === 0 && (
-                                <p className="viewed-empty-note">Search and open profiles from another account to see activity here.</p>
-                            )}
-                            {activeCategory === 'viewed-by-you' && viewedByYouList.length === 0 && (
-                                <p className="viewed-empty-note">Search and open profiles to see your viewed list here.</p>
-                            )}
+                        <div className="matches-body">
+                            {renderList()}
                         </div>
                     </main>
                 </div>

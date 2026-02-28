@@ -253,8 +253,8 @@
 
 /* ID Result Card */
 .id-result-card {
-    margin-top: 28px;
-    padding: 22px;
+    margin-top: 20px;
+    padding: 16px;
     background: #f9fafb;
     border-radius: 8px;
     border: 1px solid #e5e7eb;
@@ -262,14 +262,14 @@
 
 .id-result-inner {
     display: flex;
-    gap: 22px;
+    gap: 16px;
     align-items: flex-start;
     flex-wrap: wrap;
 }
 
 .id-result-photo {
-    width: 110px;
-    height: 110px;
+    width: 90px;
+    height: 90px;
     border-radius: 8px;
     overflow: hidden;
     background: #e5e7eb;
@@ -305,7 +305,7 @@
 
 .id-result-header h3 {
     margin: 0;
-    font-size: 1.15rem;
+    font-size: 1.05rem;
     color: #1f2937;
 }
 

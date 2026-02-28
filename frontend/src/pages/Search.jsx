@@ -1,12 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import { Search as SearchIcon, User, Heart, Bookmark } from 'lucide-react';
+import { Search as SearchIcon, User, Heart, Bookmark, Loader2, MapPin, Briefcase, GraduationCap, Sparkles, Star, X, MessageCircle, Languages } from 'lucide-react';
 import MultiSelectDropdown from '../components/MultiSelectDropdown';
 import { countryStateCityMap } from '../data/locationData';
+import { searchProfiles, searchProfileById, sendInterest, shortlistProfile, ignoreProfile } from '../services/api';
 import './Search.css';
+import './Matches.css';
 
 const Search = () => {
+    const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('criteria');
 
     // Multi-select state (arrays) — empty = "Doesn't Matter"
@@ -182,76 +186,80 @@ const Search = () => {
     const [searchId, setSearchId] = useState('');
     const [foundProfile, setFoundProfile] = useState(null);
     const [searchAttempted, setSearchAttempted] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [searchResults, setSearchResults] = useState([]);
+    const [totalMatches, setTotalMatches] = useState(0);
+    const [showResults, setShowResults] = useState(false);
 
-    const getCurrentUserSnapshot = () => {
-        const uniqueId = localStorage.getItem('uniqueId') || '';
-        const saved = JSON.parse(localStorage.getItem('userProfile') || '{}');
-        return {
-            uniqueId,
-            fullName: saved.fullName || 'Member',
-            photo: saved.photo || saved.image || '',
-            city: saved.city || '',
-            state: saved.state || '',
-            country: saved.country || '',
-        };
-    };
-
-    const trackProfileView = (viewedProfile) => {
-        if (!viewedProfile?.uniqueId) return;
-        const viewer = getCurrentUserSnapshot();
-        if (!viewer.uniqueId || viewer.uniqueId === viewedProfile.uniqueId) return;
-
-        const viewed = {
-            uniqueId: viewedProfile.uniqueId,
-            fullName: viewedProfile.fullName || 'Member',
-            photo: viewedProfile.photo || viewedProfile.image || '',
-            city: viewedProfile.city || '',
-            state: viewedProfile.state || '',
-            country: viewedProfile.country || '',
-        };
-
-        const events = JSON.parse(localStorage.getItem('profileViewEvents') || '[]');
-        const newEvent = {
-            id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-            type: 'profile_view',
-            viewedAt: new Date().toISOString(),
-            viewer,
-            viewed,
-        };
-        localStorage.setItem('profileViewEvents', JSON.stringify([newEvent, ...events].slice(0, 500)));
-    };
-
-    const dummyProfiles = [
-        {
-            id: 1, uniqueId: "SM-A1B2C3", fullName: "Priya Sharma", age: 26, height: "5'4\"",
-            religion: "Hindu", caste: "Brahmin", country: "India", state: "Maharashtra", city: "Mumbai",
-            education: "MBA", occupation: "Marketing Manager", income: "10 - 15 Lakhs",
-            motherTongue: "Hindi", mobile: "9876543210",
-            image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
-        },
-        {
-            id: 2, uniqueId: "SM-D4E5F6", fullName: "Anjali Gupta", age: 24, height: "5'6\"",
-            religion: "Hindu", caste: "Baniya", country: "India", state: "Delhi", city: "New Delhi",
-            education: "B.Tech", occupation: "Software Engineer", income: "15 - 20 Lakhs",
-            motherTongue: "Hindi", mobile: "9876543211",
-            image: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
+    const handleSearch = async () => {
+        setLoading(true);
+        setShowResults(false);
+        try {
+            const data = await searchProfiles(criteria);
+            setSearchResults(data.profiles);
+            setTotalMatches(data.total);
+            setShowResults(true);
+        } catch (err) {
+            console.error('Search failed', err);
+        } finally {
+            setLoading(false);
         }
-    ];
-
-    const getAllProfiles = () => {
-        const registered = JSON.parse(localStorage.getItem('registeredProfiles') || '[]');
-        return [...dummyProfiles, ...registered];
     };
 
-    const handleIdSearch = () => {
+    const handleIdSearch = async () => {
         setSearchAttempted(true);
-        if (!searchId.trim()) { setFoundProfile(null); return; }
-        const allProfiles = getAllProfiles();
-        const found = allProfiles.find(p => p.uniqueId && p.uniqueId.toLowerCase() === searchId.trim().toLowerCase());
-        setFoundProfile(found || null);
-        if (found) {
-            trackProfileView(found);
+        let queryId = searchId.trim().toUpperCase().replace(/^ID[\s-]*/i, '');
+        if (queryId && !queryId.startsWith('SM-')) {
+            queryId = `SM-${queryId}`;
         }
+        if (!queryId || queryId === 'SM-') { setFoundProfile(null); return; }
+        setLoading(true);
+        try {
+            const found = await searchProfileById(queryId);
+            setFoundProfile(found);
+        } catch (err) {
+            console.error('ID Search failed', err);
+            setFoundProfile(null);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSendInterestAction = async (e, uniqueId) => {
+        e.stopPropagation();
+        try {
+            await sendInterest(uniqueId, "I'm interested in your profile.");
+            alert('Interest sent successfully.');
+        } catch (err) {
+            alert(err.message || 'Failed to send interest');
+        }
+    };
+
+    const handleShortlistAction = async (e, uniqueId) => {
+        e.stopPropagation();
+        try {
+            await shortlistProfile(uniqueId);
+            alert('You have shortlisted this profile successfully.');
+        } catch (err) {
+            alert(err.message || 'Failed to shortlist');
+        }
+    };
+
+    const handleIgnoreAction = async (e, uniqueId) => {
+        e.stopPropagation();
+        if (window.confirm('Are you sure you want to ignore this profile? It will be hidden from your matches.')) {
+            try {
+                await ignoreProfile(uniqueId);
+                alert('You have ignored this profile.');
+            } catch (err) {
+                alert(err.message || 'Failed to ignore profile');
+            }
+        }
+    };
+
+    const handleChatAction = (e, uniqueId) => {
+        e.stopPropagation();
+        alert('Chat feature coming soon!');
     };
 
     const ageOptions = [];
@@ -286,9 +294,8 @@ const Search = () => {
                 <div className="search-panel">
                     {/* Tabs */}
                     <div className="search-tabs">
-                        <button className={`search-tab ${activeTab === 'criteria' ? 'active' : ''}`} onClick={() => setActiveTab('criteria')}>By Criteria</button>
-                        <button className={`search-tab ${activeTab === 'id' ? 'active' : ''}`} onClick={() => { setActiveTab('id'); setFoundProfile(null); setSearchAttempted(false); }}>By Profile ID</button>
-                        <button className={`search-tab ${activeTab === 'saved' ? 'active' : ''}`} onClick={() => setActiveTab('saved')}>Saved Search <span className="saved-count">0</span></button>
+                        <button className={`search-tab ${activeTab === 'criteria' ? 'active' : ''}`} onClick={() => { setActiveTab('criteria'); setShowResults(false); }}>By Criteria</button>
+                        <button className={`search-tab ${activeTab === 'id' ? 'active' : ''}`} onClick={() => { setActiveTab('id'); setFoundProfile(null); setSearchAttempted(false); setShowResults(false); }}>By Profile ID</button>
                     </div>
 
                     {/* Content */}
@@ -424,10 +431,86 @@ const Search = () => {
                                 {/* Bottom bar */}
                                 <div className="criteria-bottom-bar">
                                     <span className="match-count">
-                                        <strong>0 match</strong> based on your preferences
+                                        <strong>{loading ? 'Searching...' : `${totalMatches} match`}</strong> based on your criteria
                                     </span>
-                                    <button className="criteria-search-btn">Search</button>
+                                    <div className="search-actions-group">
+                                        <button className="criteria-search-btn" onClick={handleSearch} disabled={loading}>
+                                            {loading ? <Loader2 className="animate-spin" size={16} /> : <SearchIcon size={16} />} Search
+                                        </button>
+                                    </div>
                                 </div>
+
+                                {showResults && searchResults.length > 0 && (
+                                    <div className="match-results-list">
+                                        <h3>Search Results ({searchResults.length})</h3>
+                                        {searchResults.map(p => (
+                                            <div key={p.uniqueId} className="match-card" onClick={() => navigate(`/profile/${p.uniqueId}`)}>
+                                                <div className="match-card-top">
+                                                    <div className="match-card-sidebar">
+                                                        {p.photo || p.image ? (
+                                                            <img src={p.photo || p.image} alt={p.fullName} />
+                                                        ) : (
+                                                            <div className="request-photo-overlay">
+                                                                <button className="request-photo-btn">Request photo</button>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div className="match-card-main">
+                                                        <span className="active-today-label">Active Today</span>
+                                                        <h3 className="match-card-name">{p.fullName}, {p.age}</h3>
+                                                        <div className="match-card-basics">
+                                                            {p.height} • {p.city || 'Location N/A'} • {p.religion}-{p.caste || p.sect || p.section || 'Community N/A'}
+                                                        </div>
+                                                        <div className="match-card-details-grid">
+                                                            <div className="detail-item">
+                                                                <Briefcase size={16} />
+                                                                <span>{p.occupation || 'Profession N/A'}</span> • <span>{p.income || 'No Income'}</span>
+                                                            </div>
+                                                            <div className="detail-item">
+                                                                <GraduationCap size={16} />
+                                                                <span>{p.education || 'Education N/A'}</span>
+                                                            </div>
+                                                            <div className="detail-item">
+                                                                <Heart size={16} />
+                                                                <span>{p.maritalStatus || 'Never Married'}</span>
+                                                            </div>
+                                                            {p.motherTongue && (
+                                                                <div className="detail-item">
+                                                                    <Languages size={16} />
+                                                                    <span>{p.motherTongue}</span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="match-card-footer">
+                                                    <button className="card-action-btn" onClick={(e) => handleSendInterestAction(e, p.uniqueId)}>
+                                                        <Sparkles size={18} />
+                                                        Interest
+                                                    </button>
+                                                    <button className="card-action-btn" onClick={(e) => handleShortlistAction(e, p.uniqueId)}>
+                                                        <Star size={18} />
+                                                        Shortlist
+                                                    </button>
+                                                    <button className="card-action-btn" onClick={(e) => handleIgnoreAction(e, p.uniqueId)}>
+                                                        <X size={18} />
+                                                        Ignore
+                                                    </button>
+                                                    <button className="card-action-btn" onClick={(e) => handleChatAction(e, p.uniqueId)}>
+                                                        <MessageCircle size={18} />
+                                                        Chat
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                                {showResults && searchResults.length === 0 && !loading && (
+                                    <div className="no-results-msg">
+                                        <SearchIcon size={40} />
+                                        <p>No profiles found matching your criteria. Try loosening your filters.</p>
+                                    </div>
+                                )}
                             </div>
                         )}
 
@@ -444,35 +527,63 @@ const Search = () => {
                                 </div>
 
                                 {searchAttempted && foundProfile && (
-                                    <div className="id-result-card">
-                                        <div className="id-result-inner">
-                                            <div className="id-result-photo">
-                                                {foundProfile.image || foundProfile.photo ? (
-                                                    <img src={foundProfile.image || foundProfile.photo} alt={foundProfile.fullName} />
-                                                ) : (
-                                                    <div className="id-result-placeholder"><User size={50} color="#9ca3af" /></div>
-                                                )}
+                                    <div className="match-results-list" style={{ marginTop: '20px' }}>
+                                        <div className="match-card" onClick={() => navigate(`/profile/${foundProfile.uniqueId}`)}>
+                                            <div className="match-card-top">
+                                                <div className="match-card-sidebar">
+                                                    {foundProfile.photo || foundProfile.image ? (
+                                                        <img src={foundProfile.photo || foundProfile.image} alt={foundProfile.fullName} />
+                                                    ) : (
+                                                        <div className="request-photo-overlay">
+                                                            <button className="request-photo-btn">Request photo</button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="match-card-main">
+                                                    <span className="active-today-label">Active Today</span>
+                                                    <h3 className="match-card-name">{foundProfile.fullName}, {foundProfile.age}</h3>
+                                                    <div className="match-card-basics">
+                                                        {foundProfile.height} • {foundProfile.city || 'Location N/A'} • {foundProfile.religion}-{foundProfile.caste || foundProfile.sect || foundProfile.section || 'Community N/A'}
+                                                    </div>
+                                                    <div className="match-card-details-grid">
+                                                        <div className="detail-item">
+                                                            <Briefcase size={16} />
+                                                            <span>{foundProfile.occupation || 'Profession N/A'}</span> • <span>{foundProfile.income || 'No Income'}</span>
+                                                        </div>
+                                                        <div className="detail-item">
+                                                            <GraduationCap size={16} />
+                                                            <span>{foundProfile.education || 'Education N/A'}</span>
+                                                        </div>
+                                                        <div className="detail-item">
+                                                            <Heart size={16} />
+                                                            <span>{foundProfile.maritalStatus || 'Never Married'}</span>
+                                                        </div>
+                                                        {foundProfile.motherTongue && (
+                                                            <div className="detail-item">
+                                                                <Languages size={16} />
+                                                                <span>{foundProfile.motherTongue}</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <div className="id-result-info">
-                                                <div className="id-result-header">
-                                                    <h3>{foundProfile.fullName}</h3>
-                                                    <span className="id-badge">{foundProfile.uniqueId}</span>
-                                                </div>
-                                                {foundProfile.age && <p className="id-result-age">{foundProfile.age} years • {foundProfile.height || 'Height not specified'}</p>}
-                                                <div className="id-result-details">
-                                                    <div><strong>Religion:</strong> {foundProfile.religion || 'N/A'}</div>
-                                                    <div><strong>Caste:</strong> {foundProfile.caste || 'N/A'}</div>
-                                                    <div><strong>Education:</strong> {foundProfile.education || 'N/A'}</div>
-                                                    <div><strong>Occupation:</strong> {foundProfile.occupation || 'N/A'}</div>
-                                                    <div><strong>Location:</strong> {foundProfile.city ? `${foundProfile.city}, ${foundProfile.state || foundProfile.country}` : 'N/A'}</div>
-                                                    <div><strong>Income:</strong> {foundProfile.income || 'N/A'}</div>
-                                                    <div><strong>Mother Tongue:</strong> {foundProfile.motherTongue || 'N/A'}</div>
-                                                    <div><strong>Mobile:</strong> {foundProfile.mobile || 'N/A'}</div>
-                                                </div>
-                                                <div className="id-result-actions">
-                                                    <button className="criteria-search-btn">Send Interest</button>
-                                                    <button className="id-shortlist-btn"><Heart size={16} /> Shortlist</button>
-                                                </div>
+                                            <div className="match-card-footer">
+                                                <button className="card-action-btn" onClick={(e) => handleSendInterestAction(e, foundProfile.uniqueId)}>
+                                                    <Sparkles size={18} />
+                                                    Interest
+                                                </button>
+                                                <button className="card-action-btn" onClick={(e) => handleShortlistAction(e, foundProfile.uniqueId)}>
+                                                    <Star size={18} />
+                                                    Shortlist
+                                                </button>
+                                                <button className="card-action-btn" onClick={(e) => handleIgnoreAction(e, foundProfile.uniqueId)}>
+                                                    <X size={18} />
+                                                    Ignore
+                                                </button>
+                                                <button className="card-action-btn" onClick={(e) => handleChatAction(e, foundProfile.uniqueId)}>
+                                                    <MessageCircle size={18} />
+                                                    Chat
+                                                </button>
                                             </div>
                                         </div>
                                     </div>
@@ -482,19 +593,9 @@ const Search = () => {
                                     <div className="id-not-found">
                                         <User size={40} color="#ef4444" />
                                         <h4>Profile Not Found</h4>
-                                        <p>No profile found with ID "{searchId}". Please check the ID and try again.</p>
+                                        <p>No profile found with ID "{(searchId.trim().toUpperCase().replace(/^ID[\s-]*/i, '').startsWith('SM-') ? searchId.trim().toUpperCase().replace(/^ID[\s-]*/i, '') : 'SM-' + searchId.trim().toUpperCase().replace(/^ID[\s-]*/i, ''))}". Please check the ID and try again.</p>
                                     </div>
                                 )}
-                            </div>
-                        )}
-
-                        {activeTab === 'saved' && (
-                            <div className="saved-search-section">
-                                <div className="saved-empty">
-                                    <Bookmark size={48} color="#9ca3af" />
-                                    <h3>No Saved Searches</h3>
-                                    <p>Save your search criteria for quick access later.</p>
-                                </div>
                             </div>
                         )}
                     </div>

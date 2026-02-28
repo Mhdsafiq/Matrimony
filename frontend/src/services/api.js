@@ -1,0 +1,357 @@
+// API Service Layer - centralizes all backend API calls
+const API_BASE = '/api';
+
+// Get auth token from localStorage
+function getToken() {
+    return localStorage.getItem('authToken');
+}
+
+// Set auth token
+export function setToken(token) {
+    localStorage.setItem('authToken', token);
+}
+
+// Remove auth token (logout)
+export function removeToken() {
+    localStorage.removeItem('authToken');
+}
+
+// Generic fetch wrapper with auth
+async function apiFetch(url, options = {}) {
+    const token = getToken();
+    const headers = {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...options.headers,
+    };
+
+    let response;
+    try {
+        response = await fetch(`${API_BASE}${url}`, {
+            ...options,
+            headers,
+        });
+    } catch (fetchError) {
+        console.error('Fetch error:', fetchError);
+        throw new Error('Network error: Could not connect to server');
+    }
+
+    const contentType = response.headers.get('content-type');
+    let data;
+
+    if (contentType && contentType.includes('application/json')) {
+        try {
+            data = await response.json();
+        } catch (jsonError) {
+            console.error('JSON parse error:', jsonError);
+            const text = await response.text();
+            console.error('Response text:', text);
+            throw new Error('Server returned invalid JSON response');
+        }
+    } else {
+        const text = await response.text();
+        console.error('Non-JSON response:', text);
+        // If it's a 404 or something, the proxy might have returned an HTML page
+        if (!response.ok) {
+            throw new Error(`Server error: ${response.status} ${response.statusText}`);
+        }
+        data = { message: text };
+    }
+
+    if (!response.ok) {
+        throw new Error(data.error || data.message || `API request failed: ${response.status}`);
+    }
+
+    return data;
+}
+
+// ============ AUTH ============
+
+export async function register(formData) {
+    const data = await apiFetch('/auth/register', {
+        method: 'POST',
+        body: JSON.stringify(formData),
+    });
+    if (data.token) {
+        setToken(data.token);
+        localStorage.setItem('isLoggedIn', 'true');
+        localStorage.setItem('uniqueId', data.user.uniqueId);
+        localStorage.setItem('userProfile', JSON.stringify({
+            ...formData,
+            uniqueId: data.user.uniqueId,
+            id: data.user.id
+        }));
+    }
+    return data;
+}
+
+export async function login(username, password) {
+    const data = await apiFetch('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ username, password }),
+    });
+    if (data.token) {
+        setToken(data.token);
+        localStorage.setItem('isLoggedIn', 'true');
+        localStorage.setItem('uniqueId', data.user.uniqueId);
+        localStorage.setItem('userProfile', JSON.stringify({
+            email: data.user.email,
+            mobile: data.user.mobile,
+            fullName: data.user.fullName,
+            uniqueId: data.user.uniqueId,
+            gender: data.user.gender,
+            profileFor: data.user.profileFor
+        }));
+    }
+    return data;
+}
+
+export async function getCurrentUser() {
+    return apiFetch('/auth/me');
+}
+
+export async function checkEmailAvailability(email) {
+    return apiFetch('/auth/check-email', {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+    });
+}
+
+export async function checkMobileAvailability(mobile) {
+    return apiFetch('/auth/check-mobile', {
+        method: 'POST',
+        body: JSON.stringify({ mobile }),
+    });
+}
+
+export async function checkIdAvailability(uniqueId) {
+    return apiFetch('/auth/check-id', {
+        method: 'POST',
+        body: JSON.stringify({ uniqueId }),
+    });
+}
+
+export async function sendOtp(type, value) {
+    return apiFetch('/auth/send-otp', {
+        method: 'POST',
+        body: JSON.stringify({ type, value }),
+    });
+}
+
+export async function verifyOtp(value, otp) {
+    const data = await apiFetch('/auth/verify-otp', {
+        method: 'POST',
+        body: JSON.stringify({ value, otp }),
+    });
+
+    if (data.token) {
+        setToken(data.token);
+        localStorage.setItem('isLoggedIn', 'true');
+        if (data.user) {
+            localStorage.setItem('uniqueId', data.user.uniqueId);
+            localStorage.setItem('userProfile', JSON.stringify(data.user));
+        }
+    }
+    return data;
+}
+
+// ============ PROFILE ============
+
+export async function getProfile() {
+    const data = await apiFetch('/profile');
+    // Sync with localStorage for backward compatibility
+    localStorage.setItem('userProfile', JSON.stringify(data));
+    localStorage.setItem('uniqueId', data.uniqueId);
+    return data;
+}
+
+export async function updateProfile(profileData) {
+    const data = await apiFetch('/profile', {
+        method: 'PUT',
+        body: JSON.stringify(profileData),
+    });
+    // Sync localStorage
+    localStorage.setItem('userProfile', JSON.stringify(profileData));
+    return data;
+}
+
+export async function getProfileById(uniqueId) {
+    return apiFetch(`/profile/${uniqueId}`);
+}
+
+export async function uploadPhoto(photoData, isMain = false) {
+    return apiFetch('/profile/photo', {
+        method: 'POST',
+        body: JSON.stringify({ photoData, isMain }),
+    });
+}
+
+export async function deletePhoto(photoId) {
+    return apiFetch(`/profile/photo/${photoId}`, {
+        method: 'DELETE',
+    });
+}
+
+export async function setMainPhoto(photoId) {
+    return apiFetch(`/profile/photo/${photoId}/set-main`, {
+        method: 'PUT',
+    });
+}
+
+// ============ PREFERENCES ============
+
+export async function getPreferences() {
+    const data = await apiFetch('/preferences');
+    localStorage.setItem('userPreferences', JSON.stringify(data));
+    return data;
+}
+
+export async function updatePreferences(prefData) {
+    const data = await apiFetch('/preferences', {
+        method: 'PUT',
+        body: JSON.stringify(prefData),
+    });
+    localStorage.setItem('userPreferences', JSON.stringify(prefData));
+    return data;
+}
+
+// ============ SEARCH ============
+
+export async function searchProfiles(criteria) {
+    return apiFetch('/search', {
+        method: 'POST',
+        body: JSON.stringify(criteria),
+    });
+}
+
+export async function searchProfileById(uniqueId) {
+    return apiFetch(`/search/id/${uniqueId}`);
+}
+
+export async function saveSearch(name, criteria) {
+    return apiFetch('/search/save', {
+        method: 'POST',
+        body: JSON.stringify({ name, criteria }),
+    });
+}
+
+export async function getSavedSearches() {
+    return apiFetch('/search/saved');
+}
+
+export async function deleteSavedSearch(id) {
+    return apiFetch(`/search/saved/${id}`, {
+        method: 'DELETE',
+    });
+}
+
+// ============ INTERESTS ============
+
+export async function sendInterest(uniqueId, message = '') {
+    return apiFetch(`/interests/send/${uniqueId}`, {
+        method: 'POST',
+        body: JSON.stringify({ message }),
+    });
+}
+
+export async function respondToInterest(id, status) {
+    return apiFetch(`/interests/${id}/respond`, {
+        method: 'PUT',
+        body: JSON.stringify({ status }),
+    });
+}
+
+export async function getReceivedInterests(filter = 'all') {
+    return apiFetch(`/interests/received?filter=${filter}`);
+}
+
+export async function getSentInterests(filter = 'all') {
+    return apiFetch(`/interests/sent?filter=${filter}`);
+}
+
+// ============ MATCHES ============
+
+export async function getMatches() {
+    return apiFetch('/matches');
+}
+
+export async function shortlistProfile(uniqueId) {
+    return apiFetch(`/matches/shortlist/${uniqueId}`, {
+        method: 'POST',
+    });
+}
+
+export function removeFromShortlist(uniqueId) {
+    return apiFetch(`/matches/shortlist/${uniqueId}`, {
+        method: 'DELETE',
+    });
+}
+
+export function ignoreProfile(uniqueId) {
+    return apiFetch(`/matches/ignore/${uniqueId}`, {
+        method: 'POST',
+    });
+}
+
+export async function getShortlistedProfiles() {
+    return apiFetch('/matches/shortlist');
+}
+
+export async function getViewedYou() {
+    return apiFetch('/matches/viewed-you');
+}
+
+export async function getViewedByYou() {
+    return apiFetch('/matches/viewed-by-you');
+}
+
+export async function getShortlistedYou() {
+    return apiFetch('/matches/shortlisted-you');
+}
+
+export async function getNearbyMatches() {
+    return apiFetch('/matches/nearby');
+}
+
+export async function getHoroscopeMatches() {
+    return apiFetch('/matches/horoscope');
+}
+
+export async function getMatchesWithPhotos() {
+    return apiFetch('/matches/with-photos');
+}
+
+// ============ FAVOURITES ============
+
+export async function getFavourites() {
+    const data = await apiFetch('/favourites');
+    localStorage.setItem('userFavourites', JSON.stringify(data));
+    return data;
+}
+
+export async function updateFavourites(favData) {
+    const data = await apiFetch('/favourites', {
+        method: 'PUT',
+        body: JSON.stringify(favData),
+    });
+    localStorage.setItem('userFavourites', JSON.stringify(favData));
+    return data;
+}
+
+// ============ LOGOUT ============
+
+export function logout() {
+    removeToken();
+    localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('uniqueId');
+    localStorage.removeItem('userProfile');
+    localStorage.removeItem('userPreferences');
+    localStorage.removeItem('userFavourites');
+    localStorage.removeItem('profileViewEvents');
+}
+
+// ============ AUTH CHECK ============
+
+export function isAuthenticated() {
+    return !!getToken() && localStorage.getItem('isLoggedIn') === 'true';
+}

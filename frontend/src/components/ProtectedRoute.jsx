@@ -1,17 +1,18 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { isAuthenticated } from '../services/api';
 
 const ProtectedRoute = ({ children }) => {
     const navigate = useNavigate();
-    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+    const loggedIn = isAuthenticated();
 
     useEffect(() => {
-        if (!isLoggedIn) {
+        if (!loggedIn) {
             navigate('/');
         }
-    }, [isLoggedIn, navigate]);
+    }, [loggedIn, navigate]);
 
-    return isLoggedIn ? children : null;
+    return loggedIn ? children : null;
 };
 
 export default ProtectedRoute;
